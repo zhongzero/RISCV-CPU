@@ -1,5 +1,15 @@
 // riscv top module file
 // modification allowed for debugging purposes
+`include "/RISCV-CPU/CPU/src/common/fifo/fifo.v"
+`include "/RISCV-CPU/CPU/src/common/uart/uart.v"
+`include "/RISCV-CPU/CPU/src/common/uart/uart_tx.v"
+`include "/RISCV-CPU/CPU/src/common/uart/uart_rx.v"
+`include "/RISCV-CPU/CPU/src/common/uart/uart_baud_clk.v"
+`include "/RISCV-CPU/CPU/src/info.v"
+`include "/RISCV-CPU/CPU/src/cpu.v"
+`include "/RISCV-CPU/CPU/src/hci.v"
+`include "/RISCV-CPU/CPU/src/ram.v"
+`include "/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
 
 module riscv_top
 #(

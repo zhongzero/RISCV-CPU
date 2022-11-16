@@ -1,6 +1,8 @@
 // testbench top module file
 // for simulation only
 
+`include "/RISCV-CPU/CPU/src/riscv_top.v"
+
 `timescale 1ns/1ps
 module testbench;
 

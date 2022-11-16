@@ -27,6 +27,8 @@
 
 // modification allowed for debugging purposes
 
+
+
 module hci
 #(
   parameter SYS_CLK_FREQ = 100000000,
