@@ -5,9 +5,9 @@ module EX (
 	input wire [`INST_REG_WIDTH] vj,
 	input wire [`INST_REG_WIDTH] vk,
 	input wire [`DATA_WIDTH] A,
-	input wire [`ADDR_WIDTH] pc,
+	input wire [`DATA_WIDTH] pc,
 	output reg [`DATA_WIDTH] value,
-	output reg [`ADDR_WIDTH] jumppc
+	output reg [`DATA_WIDTH] jumppc
 );
 always @(*) begin
 	if(ordertype==`LUI)value=A;

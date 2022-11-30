@@ -1,12 +1,25 @@
 //width
-`define ADDR_WIDTH 31:0
 `define DATA_WIDTH 31:0
 `define INST_TYPE_WIDTH 5:0
 `define INST_REG_WIDTH 4:0
+`define INSQUEUE_LR_WIDTH 31:0 //temporary
+`define SLB_LR_WIDTH 31:0 //temporary
+`define ROB_LR_WIDTH 31:0 //temporary
+`define RS_LR_WIDTH 31:0 //temporary
+`define BHT_LR_WIDTH 31:0 //temporary
+`define ICache_TAG_WIDTH 26:0 //temporary
+`define RAM_DATA_WIDTH 7:0
+
 
 //size
-`define InstQueue_Size 16
-`define InstQueue_ADDR_WIDTH 3:0
+`define MaxIns 32
+`define MaxRS 32
+`define MaxROB 32
+`define MaxSLB 32
+`define MaxReg 32
+`define ICacheIndexSize 5
+`define MaxICache 32
+`define MaxBHT (1<<12)
 
 
 //constant
