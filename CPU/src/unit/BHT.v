@@ -10,7 +10,7 @@ module BHT (
 	/* Get_ins_to_queue() */
 	//   BranchJudge()
 	//insqueue
-	input wire bht_id1,	
+	input wire [`BHT_LR_WIDTH] bht_id1,	
 	output reg bht_get,
 
 	/* do_ROB() */

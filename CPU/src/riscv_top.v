@@ -1,15 +1,24 @@
 // riscv top module file
-// modification allowed for debugging purposes
+// modification allowed for d[ebugging purposes
+
+// `include "/RISCV-CPU/CPU/src/xxx" windows下
+`include "/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
 `include "/RISCV-CPU/CPU/src/common/fifo/fifo.v"
 `include "/RISCV-CPU/CPU/src/common/uart/uart.v"
 `include "/RISCV-CPU/CPU/src/common/uart/uart_tx.v"
 `include "/RISCV-CPU/CPU/src/common/uart/uart_rx.v"
 `include "/RISCV-CPU/CPU/src/common/uart/uart_baud_clk.v"
+`include "/RISCV-CPU/CPU/src/interface/hci.v"
+`include "/RISCV-CPU/CPU/src/interface/ram.v"
+`include "/RISCV-CPU/CPU/src/func/Decode.v"
+`include "/RISCV-CPU/CPU/src/func/EX.v"
+`include "/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
+`include "/RISCV-CPU/CPU/src/func/IsBranch.v"
+`include "/RISCV-CPU/CPU/src/func/IsLoad.v"
+`include "/RISCV-CPU/CPU/src/func/IsStore.v"
 `include "/RISCV-CPU/CPU/src/info.v"
 `include "/RISCV-CPU/CPU/src/cpu.v"
-`include "/RISCV-CPU/CPU/src/hci.v"
-`include "/RISCV-CPU/CPU/src/ram.v"
-`include "/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
+
 
 module riscv_top
 #(

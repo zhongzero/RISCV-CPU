@@ -1,4 +1,8 @@
 `include "/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/func/Decode.v"
+// `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
+// `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
+// `include "/RISCV-CPU/CPU/src/func/IsStore.v"
 module InstQueue (
 	input wire clk,
 	input wire rst,
@@ -32,6 +36,7 @@ module InstQueue (
 	//BHT
 	output reg [`BHT_LR_WIDTH] bht_id1,
 	input wire bht_get,
+
 
 	/* do_ins_queue() */
 	//ROB
@@ -140,11 +145,11 @@ reg Ins_queue_is_waiting_ins;
 //for Get_ins_to_queue()
 
 reg [`DATA_WIDTH] inst;
-reg [`INST_TYPE_WIDTH] order_type_0;
-reg [`INST_REG_WIDTH] order_rd_0;
-reg [`INST_REG_WIDTH] order_rs1_0;
-reg [`INST_REG_WIDTH] order_rs2_0;
-reg [`DATA_WIDTH] order_imm_0;
+wire [`INST_TYPE_WIDTH] order_type_0;
+wire [`INST_REG_WIDTH] order_rd_0;
+wire [`INST_REG_WIDTH] order_rs1_0;
+wire [`INST_REG_WIDTH] order_rs2_0;
+wire [`DATA_WIDTH] order_imm_0;
 
 Decode u_Decode1(
     .inst ( inst ),
@@ -155,37 +160,43 @@ Decode u_Decode1(
     .order_imm  ( order_imm_0  )
 );
 
-reg isbranch;
+wire isbranch;
 IsBranch u_IsBranch(
     .type ( order_type_0 ),
-    .isbranch  ( isbranch  )
+    .is_Branch  ( isbranch  )
 );
 
 
 //for do_ins_queue()
 
-reg [`INST_TYPE_WIDTH] order_type;
-// reg [`INST_REG_WIDTH] order_rd;
-// reg [`INST_REG_WIDTH] order_rs1;
-// reg [`INST_REG_WIDTH] order_rs2;
-reg [`DATA_WIDTH] order_imm;
+wire [`INST_TYPE_WIDTH] order_type;
+wire [`INST_REG_WIDTH] order_rd_;
+wire [`INST_REG_WIDTH] order_rs1_;
+wire [`INST_REG_WIDTH] order_rs2_;
+wire [`DATA_WIDTH] order_imm;
 
 Decode u_Decode2(
     .inst ( Ins_queue_s_inst[Ins_queue_L] ),
     .order_type ( order_type ),
-    .order_rd   ( order_rd   ),
-    .order_rs1  ( order_rs1  ),
-    .order_rs2  ( order_rs2  ),
+    .order_rd   ( order_rd_   ),
+    .order_rs1  ( order_rs1_  ),
+    .order_rs2  ( order_rs2_  ),
     .order_imm  ( order_imm  )
 );
 
-reg isload;
+always @(*) begin
+	order_rd=order_rd_;
+	order_rs1=order_rs1_;
+	order_rs2=order_rs2_;
+end
+
+wire isload;
 IsLoad u_IsLoad(
     .type ( Ins_queue_s_ordertype[Ins_queue_L] ),
     .is_Load  ( isload  )
 );
 
-reg isstore;
+wire isstore;
 IsStore u_IsStore(
     .type ( Ins_queue_s_ordertype[Ins_queue_L] ),
     .is_Store  ( isstore  )

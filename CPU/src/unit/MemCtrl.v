@@ -1,8 +1,15 @@
 `include "/RISCV-CPU/CPU/src/info.v"
-module Mem (
+module MemCtrl (
 	input wire clk,
 	input wire rst,
 	input wire rdy,
+
+	/* ram */
+	output reg r_nw_in,
+	output reg [31:0] a_in,
+	output reg [`RAM_DATA_WIDTH] d_in,
+	input wire [`RAM_DATA_WIDTH] d_out,
+
 
 	/* ClearAll */
 	input wire Clear_flag,
@@ -60,22 +67,6 @@ reg flag1;
 reg [`RAM_DATA_WIDTH] data_in,data_ans;
 reg [`RAM_DATA_WIDTH] ins_in,ins_ans;// ins_in : meaningless
 
-reg en_in;
-reg r_nw_in;
-reg [16:0] a_in;
-reg d_in;
-reg d_out;
-
-ram#(
-    .ADDR_WIDTH ( 17 )
-)u_ram(
-    .clk_in  ( clk  ),
-    .en_in   ( en_in   ),
-    .r_nw_in ( r_nw_in ),
-    .a_in    ( a_in    ),
-    .d_in    ( d_in    ),
-    .d_out   ( d_out   )
-);
 
 // do_memctrl() part1
 always @(*) begin
@@ -84,9 +75,8 @@ always @(*) begin
 		&&memctrl_data_remain_cycle;
 	if(flag1) begin//ins不在读，且mem可读
 		if(memctrl_data_l_or_s==0) begin//load
-			en_in=(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4);
 			r_nw_in=0;
-			a_in=memctrl_data_addr[16:0];
+			a_in=memctrl_data_addr[31:0];
 			d_in=data_in;
 			data_ans=d_out;
 			// mem_ram(need;0;memctrl_data_addr;data_in;data_ans);
@@ -105,18 +95,16 @@ always @(*) begin
 				data_in=memctrl_data_in[31:24];//[31:24]
 			end
 
-			en_in=(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4);
 			r_nw_in=1;
-			a_in=memctrl_data_addr[16:0];
+			a_in=memctrl_data_addr[31:0];
 			d_in=data_in;
 			data_ans=d_out;
 			// mem_ram(need;1;memctrl_data_addr;data_in;data_ans);
 		end
 	end
 	else if(memctrl_ins_remain_cycle) begin
-		en_in=(1<=memctrl_ins_remain_cycle&&memctrl_ins_remain_cycle<=4);
 		r_nw_in=0;
-		a_in=memctrl_ins_addr[16:0];
+		a_in=memctrl_ins_addr[31:0];
 		d_in=ins_in;
 		ins_ans=d_out;
 		// mem_ram(need;0;memctrl_ins_addr;ins_in;ins_ans);

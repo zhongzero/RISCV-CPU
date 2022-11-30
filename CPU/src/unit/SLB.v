@@ -1,4 +1,6 @@
 `include "/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
+// `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
 module SLB (
 	input wire clk,
 	input wire rst,
@@ -7,28 +9,7 @@ module SLB (
 	/* ClearAll */
 	input wire Clear_flag,
 
-	/* do_ins_queue() */
-	//insqueue
-
-	output reg [`SLB_LR_WIDTH] SLB_size__,
-	output reg [`SLB_LR_WIDTH] SLB_R__,
-
-	input wire insqueue_to_SLB_needchange,
-	input wire insqueue_to_SLB_size_addflag,
-	input wire [`SLB_LR_WIDTH] r1,
-
-	input wire [`SLB_LR_WIDTH] SLB_R_,
-	input wire [`DATA_WIDTH] SLB_s_vj_r1_,
-	input wire [`DATA_WIDTH] SLB_s_vk_r1_,
-	input wire [`DATA_WIDTH] SLB_s_qj_r1_,
-	input wire [`DATA_WIDTH] SLB_s_qk_r1_,
-	input wire [`DATA_WIDTH] SLB_s_inst_r1_,
-	input wire [`DATA_WIDTH] SLB_s_ordertype_r1_,
-	input wire [`DATA_WIDTH] SLB_s_pc_r1_,
-	input wire [`DATA_WIDTH] SLB_s_A_r1_,
-	input wire [`DATA_WIDTH] SLB_s_reorder_r1_,
-	input wire SLB_s_ready_r1_,
-
+	
 	/* do_SLB() */
 	//RS and ROB
 	output reg [`ROB_LR_WIDTH] b4,
@@ -56,6 +37,27 @@ module SLB (
 
 
 
+	/* do_ins_queue() */
+	//insqueue
+
+	output reg [`SLB_LR_WIDTH] SLB_size__,
+	output reg [`SLB_LR_WIDTH] SLB_R__,
+
+	input wire insqueue_to_SLB_needchange,
+	input wire insqueue_to_SLB_size_addflag,
+	input wire [`SLB_LR_WIDTH] r1,
+
+	input wire [`SLB_LR_WIDTH] SLB_R_,
+	input wire [`DATA_WIDTH] SLB_s_vj_r1_,
+	input wire [`DATA_WIDTH] SLB_s_vk_r1_,
+	input wire [`DATA_WIDTH] SLB_s_qj_r1_,
+	input wire [`DATA_WIDTH] SLB_s_qk_r1_,
+	input wire [`DATA_WIDTH] SLB_s_inst_r1_,
+	input wire [`DATA_WIDTH] SLB_s_ordertype_r1_,
+	input wire [`DATA_WIDTH] SLB_s_pc_r1_,
+	input wire [`DATA_WIDTH] SLB_s_A_r1_,
+	input wire [`DATA_WIDTH] SLB_s_reorder_r1_,
+	input wire SLB_s_ready_r1_,
 
 	
 	/* do_RS() */
@@ -90,7 +92,7 @@ reg SLB_is_waiting_data;
 
 
 
-reg [`DATA_WIDTH] loadvalue;
+wire [`DATA_WIDTH] loadvalue;
 
 reg [`SLB_LR_WIDTH] r3;
 
@@ -101,7 +103,7 @@ Extend_LoadData u_Extend_LoadData(
     .ans           ( loadvalue           )
 );
 
-reg isload;
+wire isload;
 IsLoad u_IsLoad(
     .type ( SLB_s_ordertype[r3] ),
     .is_Load  ( isload  )

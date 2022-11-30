@@ -1,4 +1,5 @@
 `include "/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/func/EX.v"
 module RS (
 	input wire clk,
 	input wire rst,
@@ -59,8 +60,8 @@ reg [`INST_TYPE_WIDTH] RS_s_ordertype[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_pc[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_jumppc[`MaxRS-1:0];
-reg [`DATA_WIDTH] RS_s_vj[`MaxRS-1:0];
-reg [`DATA_WIDTH] RS_s_vk[`MaxRS-1:0];
+reg [`INST_REG_WIDTH] RS_s_vj[`MaxRS-1:0];
+reg [`INST_REG_WIDTH] RS_s_vk[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_qj[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_qk[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_A[`MaxRS-1:0];
@@ -73,8 +74,8 @@ reg RS_s_busy[`MaxRS-1:0];
 integer i;
 
 reg [`RS_LR_WIDTH] RS_id;
-reg [`DATA_WIDTH] value;
-reg [`DATA_WIDTH] jumppc;
+wire [`DATA_WIDTH] value;
+wire [`DATA_WIDTH] jumppc;
 EX u_EX(
     .ordertype ( RS_s_ordertype[RS_id] ),
     .vj        ( RS_s_vj[RS_id]        ),

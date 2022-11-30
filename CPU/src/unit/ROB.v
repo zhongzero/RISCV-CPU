@@ -1,4 +1,6 @@
 `include "/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
+// `include "/RISCV-CPU/CPU/src/func/IsStore.v"
 module ROB (
 	input wire clk,
 	input wire rst,
@@ -8,7 +10,6 @@ module ROB (
 	input wire Clear_flag,
 
 	/* do_ROB() */
-
 	//RS and SLB
 	output reg [`ROB_LR_WIDTH] b3,
 	
@@ -104,16 +105,16 @@ reg ROB_size_internal_subflag;
 
 
 
-reg isbranch;
+wire isbranch;
 IsBranch u_IsBranch(
     .type ( ROB_s_ordertype[b3] ),
-    .isbranch  ( isbranch  )
+    .is_Branch  ( isbranch  )
 );
 
-reg isstore;
-IsBranch u_IsBranch(
+wire isstore;
+IsStore u_IsStore(
     .type ( ROB_s_ordertype[b3] ),
-    .isbranch  ( isstore  )
+    .is_Store  ( isstore  )
 );
 
 integer i;
