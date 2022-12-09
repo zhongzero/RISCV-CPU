@@ -1,4 +1,5 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 
 module IsStore (
 	input wire [`INST_TYPE_WIDTH] type,
@@ -6,8 +7,8 @@ module IsStore (
 );
 always @(*) begin
 	if(type==`SB||type==`SH||type==`SW)
-		is_Store=`TRUE;
-	else is_Store=`FALSE;
+		is_Store=1;
+	else is_Store=0;
 end
 
 endmodule

@@ -1,4 +1,5 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
 // `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
 module SLB (
@@ -62,7 +63,9 @@ module SLB (
 	
 	/* do_RS() */
 	//RS
+	input wire RS_to_SLB_needchange,
 	input wire [`ROB_LR_WIDTH] b2,
+
 	input wire [`DATA_WIDTH] RS_to_SLB_value,
 
 	/* do_ROB() */
@@ -71,9 +74,12 @@ module SLB (
 	input wire ROB_to_SLB_needchange,
 	input wire ROB_to_SLB_needchange2,
 	input wire [`DATA_WIDTH] ROB_to_SLB_value_b3
-
-
 );
+
+
+// always @(*) begin
+// 	$display("SLB        ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
 
 reg [`INST_TYPE_WIDTH] SLB_s_ordertype[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_inst[`MaxSLB-1:0];
@@ -89,7 +95,7 @@ reg [`SLB_LR_WIDTH] SLB_L,SLB_R,SLB_size;
 reg SLB_is_waiting_data;
 
 
-
+wire SLB_s_ready_L=SLB_s_ready[r3];//for_debug
 
 
 wire [`DATA_WIDTH] loadvalue;
@@ -152,6 +158,7 @@ always @(*) begin
 		else  begin
 			// update ROB
 			b4=SLB_s_reorder[r3];
+			SLB_to_ROB_needchange=1;
 			ROB_s_ready_b4_=1;
 
 			// update SLB
@@ -272,12 +279,14 @@ always @(posedge clk) begin
 		end
 
 		//from RS
-		for(i=0;i<`MaxSLB;i++) begin
-			if(SLB_s_qj[i]==b2) begin
-				SLB_s_qj[i]<=-1;SLB_s_vj[i]<=RS_to_SLB_value;
-			end
-			if(SLB_s_qk[i]==b2) begin
-				SLB_s_qk[i]<=-1;SLB_s_vk[i]<=RS_to_SLB_value;
+		if(RS_to_SLB_needchange) begin
+			for(i=0;i<`MaxSLB;i++) begin
+				if(SLB_s_qj[i]==b2) begin
+					SLB_s_qj[i]<=-1;SLB_s_vj[i]<=RS_to_SLB_value;
+				end
+				if(SLB_s_qk[i]==b2) begin
+					SLB_s_qk[i]<=-1;SLB_s_vk[i]<=RS_to_SLB_value;
+				end
 			end
 		end
 
@@ -300,7 +309,6 @@ always @(posedge clk) begin
 			end
 		end
 	end
-
 end
 
 

@@ -1,7 +1,8 @@
 // testbench top module file
 // for simulation only
 
-`include "/RISCV-CPU/CPU/src/riscv_top.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/riscv_top.v"
+// `include "/RISCV-CPU/CPU/src/riscv_top.v"
 
 `timescale 1ns/1ps
 module testbench;
@@ -16,21 +17,33 @@ riscv_top #(.SIM(1)) top(
     .Rx(),
     .led()
 );
+integer count=0;
 
+integer cnt=0;
 initial begin
   clk=0;
   rst=1;
-  repeat(50) #1 clk=!clk;
+  repeat(50) begin
+    count++;
+    // $display("!!!!!!!!!!",count);
+    #1 clk=!clk;
+    // if(count==10)$finish;
+  end
   rst=0; 
-  forever #1 clk=!clk;
+  forever begin
+    #1 clk=!clk;
+    cnt=cnt+1;
+    // if (cnt%10==0) $display("cnt",cnt);
+  end
 
   $finish;
 end
 
 initial begin
-     $dumpfile("test.vcd");
-     $dumpvars(0, testbench);
-     #300000000 $finish;
+    // $dumpfile("test7.vcd");
+    // $dumpvars(0, testbench); // 打开wave记录
+
+    // #5000000 $finish;
 end
 
 endmodule

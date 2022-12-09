@@ -1,11 +1,12 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 
 module Decode (
 	input wire [`DATA_WIDTH] inst,
 	output reg [`INST_TYPE_WIDTH] order_type,
-	output reg [`INST_REG_WIDTH] order_rd,
-	output reg [`INST_REG_WIDTH] order_rs1,
-	output reg [`INST_REG_WIDTH] order_rs2,
+	output reg [`DATA_WIDTH] order_rd,
+	output reg [`DATA_WIDTH] order_rs1,
+	output reg [`DATA_WIDTH] order_rs2,
 	output reg [`DATA_WIDTH] order_imm
 );
 wire [6:0] type1;
@@ -64,6 +65,7 @@ always @(*) begin
 			end
 		end
 		order_imm[31:0]={20'b0,inst[31:20]};
+		if(order_type==`SRAI)order_imm[10]=0;
 	end
 
 	if(type1==7'h23) begin //S类型
@@ -103,8 +105,6 @@ always @(*) begin
 	if(order_type==`BEQ||order_type==`BNE||order_type==`BLT||order_type==`BGE||order_type==`BLTU||order_type==`BGEU) begin
 		if(order_imm>>12)order_imm|=32'hffffe000;
 	end
-
-
 end
 
 endmodule

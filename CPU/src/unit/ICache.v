@@ -1,11 +1,9 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 module ICache (
 	input wire clk,
 	input wire rst,
 	input wire rdy,
-
-	/* ClearAll */
-	input wire Clear_flag,
 
 	/* Get_ins_to_queue() */
 	//   Search_In_ICache()
@@ -17,16 +15,23 @@ module ICache (
 	/* Get_ins_to_queue() */
 	//   Store_In_ICache()
 	//insqueue
+	input wire insqueue_to_ICache_needchange,
 	input wire [`DATA_WIDTH] addr2,
 	input wire [`DATA_WIDTH] storeInst
 );
+
+
+// always @(*) begin
+// 	$display("ICache     ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
+
 reg icache_valid[`MaxICache-1:0];
 reg [`ICache_TAG_WIDTH] icache_tag[`MaxICache-1:0];
 reg [`DATA_WIDTH] icache_inst[`MaxICache-1:0];
 
-integer i;
+integer i,j;
 
-
+wire icache_valid0=icache_valid[0];//for_debug
 
 
 reg [`ICacheIndexSize-1:0] b5;
@@ -51,7 +56,7 @@ end
 always @(posedge clk) begin
 	if(rst) begin
 		// ICache
-		for(i=0;i<`MaxICache;i=i+1) begin
+		for(i=0;i<`MaxICache;i++) begin
 			icache_valid[i]<=0;
 			icache_tag[i]<=0;
 			icache_inst[i]<=0;
@@ -59,14 +64,13 @@ always @(posedge clk) begin
 	end
 	else if(~rdy) begin
 	end
-	else if(Clear_flag) begin
-		for(i=0;i<`MaxICache;i++)icache_valid[i]<=0;
-	end
 	else begin
 		// Store_In_ICache() part2
-		icache_valid[b6]<=1;
-		icache_tag[b6]<=addr2[31:`ICacheIndexSize];
-		icache_inst[b6]<=storeInst;
+		if(insqueue_to_ICache_needchange) begin
+			icache_valid[b6]<=1;
+			icache_tag[b6]<=addr2[31:`ICacheIndexSize];
+			icache_inst[b6]<=storeInst;
+		end
 	end
 
 end

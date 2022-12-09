@@ -1,4 +1,5 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/func/EX.v"
 module RS (
 	input wire clk,
@@ -13,11 +14,15 @@ module RS (
 	output reg [`ROB_LR_WIDTH] b2,
 
 	//ROB
+	output reg RS_to_ROB_needchange,
+	output reg RS_to_ROB_needchange2,
+
 	output reg [`DATA_WIDTH] ROB_s_value_b2_,
 	output reg ROB_s_ready_b2_,
 	output reg [`DATA_WIDTH] ROB_s_jumppc_b2_,
 
 	//SLB
+	output reg RS_to_SLB_needchange,
 	output reg [`DATA_WIDTH] RS_to_SLB_value,
 
 
@@ -56,12 +61,16 @@ module RS (
 );
 
 
+// always @(*) begin
+// 	$display("RS         ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
+
 reg [`INST_TYPE_WIDTH] RS_s_ordertype[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_pc[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_jumppc[`MaxRS-1:0];
-reg [`INST_REG_WIDTH] RS_s_vj[`MaxRS-1:0];
-reg [`INST_REG_WIDTH] RS_s_vk[`MaxRS-1:0];
+reg [`DATA_WIDTH] RS_s_vj[`MaxRS-1:0];
+reg [`DATA_WIDTH] RS_s_vk[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_qj[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_qk[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_A[`MaxRS-1:0];
@@ -71,11 +80,12 @@ reg RS_s_busy[`MaxRS-1:0];
 
 
 
-integer i;
+integer i,j;
 
 reg [`RS_LR_WIDTH] RS_id;
 wire [`DATA_WIDTH] value;
 wire [`DATA_WIDTH] jumppc;
+wire [`INST_TYPE_WIDTH] tmp_ordertype=RS_s_ordertype[RS_id];//for_debug
 EX u_EX(
     .ordertype ( RS_s_ordertype[RS_id] ),
     .vj        ( RS_s_vj[RS_id]        ),
@@ -89,19 +99,32 @@ EX u_EX(
 
 // do_RS() part1
 always @(*) begin
+	RS_to_ROB_needchange=0;
+	RS_to_ROB_needchange2=0;
+	RS_to_SLB_needchange=0;
+
 	RS_id=-1;
 	for(i=`MaxRS-1;i>=0;i--) begin
-		if(RS_s_busy[i]&&RS_s_qj[i]==-1&&RS_s_qk[i]==-1) RS_id=i;
+		if(RS_s_busy[i]&&RS_s_qj[i]==-1&&RS_s_qk[i]==-1) begin
+			RS_id=i;
+		end
 	end
+	// `MaxRS=32
+	// $display("RS         ","RS_id=",RS_id);
 	if(RS_id!=-1) begin
 		// EX(RS_s[RS_id];value;jumppc);
 
 		// 修改 ROB
 		b2=RS_s_reorder[RS_id];
+		RS_to_ROB_needchange=1;
 		ROB_s_value_b2_=value ; ROB_s_ready_b2_=1;
-		if(RS_s_ordertype[RS_id]==`JALR)ROB_s_jumppc_b2_=jumppc;
+		if(RS_s_ordertype[RS_id]==`JALR) begin
+			RS_to_ROB_needchange2=1;
+			ROB_s_jumppc_b2_=jumppc;
+		end
 
 		// 修改 SLB
+		RS_to_SLB_needchange=1;
 		RS_to_SLB_value=value;
 		// for(i=0;i<`MaxSLB;i++) begin
 		// 	if(SLB_s_qj_i==b2) begin
@@ -117,9 +140,9 @@ end
 
 always @(*) begin
 	RS_unbusy_pos=-1;
-	for(i=0;i<`MaxRS;i++) begin
-		if(!RS_s_busy[i]) begin
-			RS_unbusy_pos=i;
+	for(j=`MaxRS-1;j>=0;j--) begin
+		if(!RS_s_busy[j]) begin
+			RS_unbusy_pos=j;
 		end
 	end
 end
@@ -144,7 +167,7 @@ always @(posedge clk) begin
 	else if(~rdy) begin
 	end
 	else if(Clear_flag) begin
-		for(i=0;i<`MaxRS;i=i+1) begin
+		for(i=0;i<`MaxRS;i++) begin
 			RS_s_busy[i]<=0;
 			RS_s_qj[i]<=-1;RS_s_qk[i]<=-1;
 		end
@@ -210,7 +233,6 @@ always @(posedge clk) begin
 			end
 		end
 	end
-
 end
 
 

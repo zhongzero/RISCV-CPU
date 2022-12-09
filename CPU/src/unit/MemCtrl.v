@@ -1,11 +1,12 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 module MemCtrl (
 	input wire clk,
 	input wire rst,
 	input wire rdy,
 
 	/* ram */
-	output reg r_nw_in,
+	output reg r_or_w,//0:r,1:w
 	output reg [31:0] a_in,
 	output reg [`RAM_DATA_WIDTH] d_in,
 	input wire [`RAM_DATA_WIDTH] d_out,
@@ -37,6 +38,11 @@ module MemCtrl (
 	input wire [`DATA_WIDTH] SLB_to_memctrl_vk,
 	input wire [`DATA_WIDTH] SLB_to_memctrl_A
 );
+
+
+// always @(*) begin
+// 	$display("MemCtrl    ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
 
 
 //memctrl
@@ -75,11 +81,19 @@ always @(*) begin
 		&&memctrl_data_remain_cycle;
 	if(flag1) begin//ins不在读，且mem可读
 		if(memctrl_data_l_or_s==0) begin//load
-			r_nw_in=0;
-			a_in=memctrl_data_addr[31:0];
-			d_in=data_in;
-			data_ans=d_out;
-			// mem_ram(need;0;memctrl_data_addr;data_in;data_ans);
+			if(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4) begin
+				r_or_w=0;
+				a_in=memctrl_data_addr[31:0];
+				// mem_ram(need;0;memctrl_data_addr;data_in;data_ans);
+			end
+			else begin
+				r_or_w=0;
+				a_in=0;
+			end
+
+			if(1<=memctrl_data_current_pos&&memctrl_data_current_pos<=4) begin
+				data_ans=d_out;
+			end
 		end
 		else  begin//store
 			if(memctrl_data_current_pos==0) begin
@@ -94,20 +108,37 @@ always @(*) begin
 			if(memctrl_data_current_pos==3) begin
 				data_in=memctrl_data_in[31:24];//[31:24]
 			end
-
-			r_nw_in=1;
-			a_in=memctrl_data_addr[31:0];
-			d_in=data_in;
-			data_ans=d_out;
-			// mem_ram(need;1;memctrl_data_addr;data_in;data_ans);
+			
+			if(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4) begin
+				r_or_w=1;
+				a_in=memctrl_data_addr[31:0];
+				d_in=data_in;
+				// mem_ram(need;1;memctrl_data_addr;data_in;data_ans);
+			end
+			else begin
+				r_or_w=0;
+				a_in=0;
+			end
 		end
 	end
 	else if(memctrl_ins_remain_cycle) begin
-		r_nw_in=0;
-		a_in=memctrl_ins_addr[31:0];
-		d_in=ins_in;
-		ins_ans=d_out;
-		// mem_ram(need;0;memctrl_ins_addr;ins_in;ins_ans);
+		if(1<=memctrl_ins_remain_cycle&&memctrl_ins_remain_cycle<=4) begin
+			r_or_w=0;
+			a_in=memctrl_ins_addr[31:0];
+			ins_ans=d_out;
+			// mem_ram(need;0;memctrl_ins_addr;ins_in;ins_ans);
+		end
+		else begin
+			r_or_w=0;
+			a_in=0;
+		end
+		if(1<=memctrl_ins_current_pos&&memctrl_ins_current_pos<=4) begin
+			ins_ans=d_out;
+		end
+	end
+	else begin
+		r_or_w=0;
+		a_in=0;
 	end
 end
 
@@ -120,6 +151,11 @@ always @(*) begin
 	memctrl_data_ok__=memctrl_data_ok;
 	memctrl_data_ans__=memctrl_data_ans;
 end
+
+always @(*) begin
+	pos=SLB_to_memctrl_vj+SLB_to_memctrl_A;
+end
+
 
 always @(posedge clk) begin
 	if(rst) begin
@@ -137,6 +173,7 @@ always @(posedge clk) begin
 		memctrl_data_in<=0;
 		memctrl_data_ans<=0;
 		memctrl_data_ok<=0;
+
 	end
 	else if(~rdy) begin
 	end
@@ -267,32 +304,27 @@ always @(posedge clk) begin
 			memctrl_ins_remain_cycle<=memctrl_ins_remain_cycle_;
 		end
 
-		// from ROB
+		// from SLB
 		//      LoadData()
 		if(SLB_to_memctrl_needchange) begin //load
 			memctrl_data_l_or_s=0;
 			if(SLB_to_memctrl_ordertype==`LB) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=1;
 			end
 			if(SLB_to_memctrl_ordertype==`LH) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=2;
 			end
 			if(SLB_to_memctrl_ordertype==`LW) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=4;
 			end
 			if(SLB_to_memctrl_ordertype==`LBU) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=1;
 			end
 			if(SLB_to_memctrl_ordertype==`LHU) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=2;
 			end
@@ -302,17 +334,14 @@ always @(posedge clk) begin
 			memctrl_data_l_or_s=1;
 			memctrl_data_in=SLB_to_memctrl_vk;
 			if(SLB_to_memctrl_ordertype==`SB) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=1;
 			end
 			if(SLB_to_memctrl_ordertype==`SH) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=2;
 			end
 			if(SLB_to_memctrl_ordertype==`SW) begin
-				pos<=SLB_to_memctrl_vj+SLB_to_memctrl_A;
 				memctrl_data_addr<=pos;
 				memctrl_data_remain_cycle<=4;
 			end

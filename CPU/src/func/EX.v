@@ -1,9 +1,10 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 
 module EX (
 	input wire [`INST_TYPE_WIDTH] ordertype,
-	input wire [`INST_REG_WIDTH] vj,
-	input wire [`INST_REG_WIDTH] vk,
+	input wire [`DATA_WIDTH] vj,
+	input wire [`DATA_WIDTH] vk,
 	input wire [`DATA_WIDTH] A,
 	input wire [`DATA_WIDTH] pc,
 	output reg [`DATA_WIDTH] value,

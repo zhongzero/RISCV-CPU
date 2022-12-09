@@ -1,7 +1,6 @@
 //width
 `define DATA_WIDTH 31:0
 `define INST_TYPE_WIDTH 5:0
-`define INST_REG_WIDTH 4:0
 `define INSQUEUE_LR_WIDTH 31:0 //temporary
 `define SLB_LR_WIDTH 31:0 //temporary
 `define ROB_LR_WIDTH 31:0 //temporary
@@ -17,14 +16,11 @@
 `define MaxROB 32
 `define MaxSLB 32
 `define MaxReg 32
-`define ICacheIndexSize 5
-`define MaxICache 32
+`define ICacheIndexSize 8
+`define MaxICache 256
 `define MaxBHT (1<<12)
 
 
-//constant
-`define TRUE 1'b1
-`define FALSE 1'b0
 
 //inst_type
 

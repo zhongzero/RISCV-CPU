@@ -1,4 +1,5 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/func/Decode.v"
 // `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
 // `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
@@ -24,11 +25,12 @@ module InstQueue (
 	//   Search_In_ICache()
 	//icache
 	output reg [`DATA_WIDTH] addr1,
-	input wire hit,
+	input wire hit_in,
 	input wire [`DATA_WIDTH] returnInst,
 
 	//   Store_In_ICache()
 	//icache
+	output reg insqueue_to_ICache_needchange,
 	output reg [`DATA_WIDTH] addr2,
 	output reg [`DATA_WIDTH] storeInst,
 
@@ -58,7 +60,7 @@ module InstQueue (
 	output reg [`DATA_WIDTH] ROB_s_pc_b1_,
 	output reg [`DATA_WIDTH] ROB_s_inst_b1_,
 	output reg [`INST_TYPE_WIDTH] ROB_s_ordertype_b1_,
-	output reg [`INST_REG_WIDTH] ROB_s_dest_b1_,
+	output reg [`DATA_WIDTH] ROB_s_dest_b1_,
 	output reg [`DATA_WIDTH] ROB_s_jumppc_b1_,
 	output reg ROB_s_isjump_b1_,
 	output reg ROB_s_ready_b1_,
@@ -102,8 +104,8 @@ module InstQueue (
 	output reg SLB_s_ready_r1_,
 
 	//Reg
-	output reg [`INST_REG_WIDTH] order_rs1,
-	output reg [`INST_REG_WIDTH] order_rs2,
+	output reg [`DATA_WIDTH] order_rs1,
+	output reg [`DATA_WIDTH] order_rs2,
 
 	input wire reg_busy_order_rs1,
 	input wire reg_busy_order_rs2,
@@ -113,7 +115,7 @@ module InstQueue (
 	input wire [`DATA_WIDTH] reg_reg_order_rs2,
 	
 	output reg insqueue_to_Reg_needchange,
-	output reg [`INST_REG_WIDTH] order_rd,
+	output reg [`DATA_WIDTH] order_rd,
 
 	output reg reg_busy_order_rd_,
 	output reg [`DATA_WIDTH] reg_reorder_order_rd_,
@@ -124,9 +126,13 @@ module InstQueue (
 
 	/* do_ROB() */
 	//ROB
-	input wire ROB_to_insqueue_needchange,
-	input wire [`DATA_WIDTH] pc_ // 这个更改pc的优先级高于Get_ins_to_queue()的优先级 !!!
+	input wire [`DATA_WIDTH] pc_ // Clear_flag=1时做 (这个更改pc的优先级高于Get_ins_to_queue()的优先级 !!!)
 );
+
+
+// always @(*) begin
+// 	$display("Ins_Queue  ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
 
 //pc
 reg [`DATA_WIDTH] pc;
@@ -144,11 +150,12 @@ reg Ins_queue_is_waiting_ins;
 
 //for Get_ins_to_queue()
 
+reg hit;
 reg [`DATA_WIDTH] inst;
 wire [`INST_TYPE_WIDTH] order_type_0;
-wire [`INST_REG_WIDTH] order_rd_0;
-wire [`INST_REG_WIDTH] order_rs1_0;
-wire [`INST_REG_WIDTH] order_rs2_0;
+wire [`DATA_WIDTH] order_rd_0;
+wire [`DATA_WIDTH] order_rs1_0;
+wire [`DATA_WIDTH] order_rs2_0;
 wire [`DATA_WIDTH] order_imm_0;
 
 Decode u_Decode1(
@@ -170,10 +177,12 @@ IsBranch u_IsBranch(
 //for do_ins_queue()
 
 wire [`INST_TYPE_WIDTH] order_type;
-wire [`INST_REG_WIDTH] order_rd_;
-wire [`INST_REG_WIDTH] order_rs1_;
-wire [`INST_REG_WIDTH] order_rs2_;
+wire [`DATA_WIDTH] order_rd_;
+wire [`DATA_WIDTH] order_rs1_;
+wire [`DATA_WIDTH] order_rs2_;
 wire [`DATA_WIDTH] order_imm;
+
+wire [31:0] order_inst=Ins_queue_s_inst[Ins_queue_L];//for_debug
 
 Decode u_Decode2(
     .inst ( Ins_queue_s_inst[Ins_queue_L] ),
@@ -202,7 +211,7 @@ IsStore u_IsStore(
     .is_Store  ( isstore  )
 );
 
-reg insqueue_size_internal_addflag;
+reg[31:0] insqueue_size_internal_addflag;
 
 integer g;
 
@@ -213,15 +222,17 @@ integer i;
 
 // Get_ins_to_queue() part1
 always @(*) begin
+	hit=0;
 	insqueue_size_internal_addflag=0;
 
 	insqueue_to_memctrl_needchange=0;
+	insqueue_to_ICache_needchange=0;
 
 	if(!Ins_queue_is_waiting_ins&&Ins_queue_size!=`MaxIns) begin
 		addr1=pc;
-		// hit=hit;
+		hit=hit_in;
 		inst=returnInst;
-		// Search_In_ICache(pc;hit;inst);
+		// Search_In_ICache(pc;hit_in;inst);
 		if(!hit) begin
 			insqueue_to_memctrl_needchange=1;
 			memctrl_ins_addr_=pc;
@@ -230,34 +241,39 @@ always @(*) begin
 	end
 	if(memctrl_ins_ok) begin
 		inst=memctrl_ins_ans;
+
+		insqueue_to_ICache_needchange=1;
 		addr2=pc;
 		storeInst=memctrl_ins_ans;
 		// Store_In_ICache(pc;memctrl_ins_ans);
 	end
 	if(memctrl_ins_ok||hit) begin
 		// Order order=Decode(inst);
-		
-		g=(Ins_queue_R+1)%`MaxIns;
-		insqueue_size_internal_addflag=1;
-		// Ins_queue_size++;
+		// if(order_type_0==`EEND) begin
+		// end
+		// else begin
+			g=(Ins_queue_R+1)%`MaxIns;
+			insqueue_size_internal_addflag=1;
+			// Ins_queue_size++;
 
-		// isBranch(order_type_0,isbranch);
-		if(isbranch) begin
-			//JAL 直接跳转
-			//目前强制pc不跳转；JALR默认不跳转，让它必定预测失败
-			if(order_type_0==`JAL);
-			else  begin
-				if(order_type_0==`JALR);
+			// isBranch(order_type_0,isbranch);
+			if(isbranch) begin
+				//JAL 直接跳转
+				//目前强制pc不跳转；JALR默认不跳转，让它必定预测失败
+				if(order_type_0==`JAL);
 				else  begin
-					bht_id1=Ins_queue_s_inst[g][11:0];
-					// BranchJudge(Ins_queue_s_inst[g][11:0]);
+					if(order_type_0==`JALR);
+					else  begin
+						bht_id1=inst[11:0];
+						// BranchJudge(Ins_queue_s_inst[g][11:0]);
+					end
 				end
 			end
-		end
+		// end
 	end
 end
 
-reg insqueue_size_internal_subflag;
+reg[31:0] insqueue_size_internal_subflag;
 
 // do_ins_queue() part1
 always @(*) begin
@@ -333,7 +349,9 @@ always @(*) begin
 						end
 						else SLB_s_qk_r1_=h2;
 					end
-					else SLB_s_vk_r1_=reg_reg_order_rs2;SLB_s_qk_r1_=-1;
+					else begin
+						SLB_s_vk_r1_=reg_reg_order_rs2;SLB_s_qk_r1_=-1;
+					end
 				end
 				else SLB_s_qk_r1_=-1;
 				
@@ -363,24 +381,23 @@ always @(*) begin
 			//RS满了，因此取消issue InstructionQueue中的指令
 			if(r2==-1);
 			else begin
-				insqueue_to_RS_needchange=1;
-				insqueue_to_ROB_needchange=1;
 				//b为该指令ROB准备存放的位置
 				b1=(ROB_R+1)%`MaxROB;
-				ROB_R_=b1;insqueue_to_ROB_size_addflag=1;
 				//将该指令从Ins_queue删去
 				insqueue_size_internal_subflag=1;
-				Ins_queue_size--;
+				// Ins_queue_size--;
 				//解码
 				// Order order=Decode(Ins_queue_s_inst[Ins_queue_L]);
 
 				//修改ROB
-				
+				insqueue_to_ROB_needchange=1;
+				ROB_R_=b1;insqueue_to_ROB_size_addflag=1;
 				ROB_s_inst_b1_=Ins_queue_s_inst[Ins_queue_L]; ROB_s_ordertype_b1_=Ins_queue_s_ordertype[Ins_queue_L];
 				ROB_s_pc_b1_=Ins_queue_s_pc[Ins_queue_L]; ROB_s_jumppc_b1_=Ins_queue_s_jumppc[Ins_queue_L] ; ROB_s_isjump_b1_=Ins_queue_s_isjump[Ins_queue_L];
 				ROB_s_dest_b1_=order_rd ; ROB_s_ready_b1_=0;
 
 				//修改RS
+				insqueue_to_RS_needchange=1;
 				if( Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h37&&Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h17 && Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h6f ) begin// 不为LUI;AUIPC;JAL (有rs1的)
 					//根据rs1寄存器的情况决定是否给其renaming(vj;qj)
 					//如果rs1寄存器上为busy且其最后一次修改对应的ROB位置还未commit，则renaming
@@ -407,7 +424,9 @@ always @(*) begin
 						end
 						else RS_s_qk_r2_=h2;
 					end
-					else RS_s_vk_r2_=reg_reg_order_rs2;RS_s_qk_r2_=-1;
+					else begin 
+						RS_s_vk_r2_=reg_reg_order_rs2;RS_s_qk_r2_=-1;
+					end
 				end
 				else RS_s_qk_r2_=-1;
 				
@@ -437,7 +456,7 @@ always @(posedge clk) begin
 		pc<=0;
 
 		//Ins_queue
-		for(i=0;i<`MaxIns;i=i+1) begin
+		for(i=0;i<`MaxIns;i++) begin
 			Ins_queue_s_inst[i]<=0;
 			Ins_queue_s_pc[i]<=0;
 			Ins_queue_s_jumppc[i]<=0;
@@ -452,6 +471,7 @@ always @(posedge clk) begin
 	end
 	else if(Clear_flag) begin
 		Ins_queue_L<=1;Ins_queue_R<=0;Ins_queue_size<=0;Ins_queue_is_waiting_ins<=0;
+		pc<=pc_;
 	end
 	else begin
 		//for Ins_queue_size
@@ -469,32 +489,32 @@ always @(posedge clk) begin
 		if(memctrl_ins_ok||hit) begin
 			Ins_queue_R<=g;
 
-			Ins_queue_s_inst[g]<=inst;Ins_queue_s_ordertype[g]<=order_type;Ins_queue_s_pc[g]<=pc;
+			Ins_queue_s_inst[g]<=inst;Ins_queue_s_ordertype[g]<=order_type_0;Ins_queue_s_pc[g]<=pc;
 			if(isbranch) begin
 				//JAL 直接跳转
 				//目前强制pc不跳转；JALR默认不跳转，让它必定预测失败
-				if(order_type==`JAL) begin
-					if(!ROB_to_insqueue_needchange)pc<=pc+order_imm_0;
+				if(order_type_0==`JAL) begin
+					pc<=pc+order_imm_0;
 				end
 				else  begin
-					if(order_type==`JALR) begin
-						if(!ROB_to_insqueue_needchange)pc<=pc+4;
+					if(order_type_0==`JALR) begin
+						pc<=pc+4;
 					end
 					else  begin
 						Ins_queue_s_jumppc[g]<=pc+order_imm_0;
 						if(bht_get) begin
-							if(!ROB_to_insqueue_needchange)pc<=pc+order_imm_0;
+							pc<=pc+order_imm_0;
 							Ins_queue_s_isjump[g]<=1;
 						end
 						else begin
-							if(!ROB_to_insqueue_needchange)pc<=pc+4;
+							pc<=pc+4;
 							Ins_queue_s_isjump[g]<=0;
 						end
 					end
 				end
 			end
 			else begin
-				if(!ROB_to_insqueue_needchange)pc<=pc+4;
+				pc<=pc+4;
 			end
 		end
 
@@ -521,12 +541,6 @@ always @(posedge clk) begin
 				end
 			end
 		end
-
-		// from ROB
-		if(ROB_to_insqueue_needchange) begin
-			pc<=pc_;
-		end
-
 	end
 end
 

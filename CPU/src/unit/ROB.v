@@ -1,4 +1,5 @@
-`include "/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
 // `include "/RISCV-CPU/CPU/src/func/IsStore.v"
 module ROB (
@@ -29,19 +30,19 @@ module ROB (
 
 
 	//Reg
-	output reg [`INST_REG_WIDTH] commit_rd,
+	output reg [`DATA_WIDTH] commit_rd,
 
 	input wire reg_busy_commit_rd,
 	input wire [`ROB_LR_WIDTH] reg_reorder_commit_rd,
 	
 	output reg ROB_to_Reg_needchange,
+	output reg ROB_to_Reg_needchange2,
 	
 	output reg [`DATA_WIDTH] reg_reg_commit_rd_,
 	output reg reg_busy_commit_rd_,
 
 	//insqueue
-	output reg ROB_to_insqueue_needchange,
-	output reg [`DATA_WIDTH] pc_,
+	output reg [`DATA_WIDTH] pc_,// Clear_flag=1时做 (这个更改pc的优先级高于Get_ins_to_queue()的优先级 !!!)
 
 	//Clear_flag (cpu.v)
 	output reg Clear_flag_,
@@ -68,13 +69,15 @@ module ROB (
 	input wire [`DATA_WIDTH] ROB_s_pc_b1_,
 	input wire [`DATA_WIDTH] ROB_s_inst_b1_,
 	input wire [`INST_TYPE_WIDTH] ROB_s_ordertype_b1_,
-	input wire [`INST_REG_WIDTH] ROB_s_dest_b1_,
+	input wire [`DATA_WIDTH] ROB_s_dest_b1_,
 	input wire [`DATA_WIDTH] ROB_s_jumppc_b1_,
 	input wire ROB_s_isjump_b1_,
 	input wire ROB_s_ready_b1_,
 
 	/* do_RS() */
 	//RS
+	input wire RS_to_ROB_needchange,
+	input wire RS_to_ROB_needchange2,
 	input wire [`ROB_LR_WIDTH] b2,
 
 	input wire [`DATA_WIDTH] ROB_s_value_b2_,
@@ -89,6 +92,11 @@ module ROB (
 	input wire [`DATA_WIDTH] ROB_s_value_b4_,
 	input wire ROB_s_ready_b4_
 );
+
+
+// always @(*) begin
+// 	$display("ROB        ","clk=",clk,",rst=",rst,", time=%t",$realtime);
+// end
 
 reg [`INST_TYPE_WIDTH] ROB_s_ordertype[`MaxROB-1:0];
 reg [`DATA_WIDTH] ROB_s_inst[`MaxROB-1:0];
@@ -119,12 +127,17 @@ IsStore u_IsStore(
 
 integer i;
 
+wire ROB_s_ready_L=ROB_s_ready[b3];//for_debug
+wire[31:0] ROB_s_value_L=ROB_s_value[b3];//for_debug
+wire [`INST_TYPE_WIDTH] ROB_s_ordertype_L=ROB_s_ordertype[b3];//for_debug
+wire[31:0] ROB_s_jumppc_L=ROB_s_jumppc[b3];//for_debug
 
 // do_ROB() part1
 always @(*) begin
 	ROB_size_internal_subflag=0;
 
 	ROB_to_Reg_needchange=0;
+	ROB_to_Reg_needchange2=0;
 	
 	ROB_to_RS_needchange=0;
 	
@@ -134,7 +147,6 @@ always @(*) begin
 	ROB_to_BHT_needchange=0;
 	ROB_to_BHT_needchange2=0;
 
-	ROB_to_insqueue_needchange=0;
 	
 	Clear_flag_=0;
 
@@ -155,7 +167,10 @@ always @(*) begin
 					ROB_to_Reg_needchange=1;
 					commit_rd=ROB_s_dest[b3];
 					reg_reg_commit_rd_=ROB_s_value[b3];
-					if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3)reg_busy_commit_rd_=0;
+					if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3) begin 
+						ROB_to_Reg_needchange2=1;
+						reg_busy_commit_rd_=0;
+					end
 					
 					// update RS
 					ROB_to_RS_needchange=1;
@@ -204,7 +219,6 @@ always @(*) begin
 						// end
 
 						// update pc
-						ROB_to_insqueue_needchange=1;
 						if(ROB_s_value[b3])pc_=ROB_s_jumppc[b3];
 						else pc_=ROB_s_pc[b3]+4;
 						
@@ -216,7 +230,10 @@ always @(*) begin
 							ROB_to_Reg_needchange=1;
 							commit_rd=ROB_s_dest[b3];
 							reg_reg_commit_rd_=ROB_s_value[b3];
-							if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3)reg_busy_commit_rd_=0;
+							if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3) begin
+								ROB_to_Reg_needchange2=1;
+								reg_busy_commit_rd_=0;
+							end
 						end
 					end
 					else begin//预测成功
@@ -264,7 +281,10 @@ always @(*) begin
 				ROB_to_Reg_needchange=1;
 				commit_rd=ROB_s_dest[b3];
 				reg_reg_commit_rd_=ROB_s_value[b3];
-				if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3)reg_busy_commit_rd_=0;
+				if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3) begin
+					ROB_to_Reg_needchange2=1;
+					reg_busy_commit_rd_=0;
+				end
 
 				// update RS
 				ROB_to_RS_needchange=1;
@@ -374,14 +394,18 @@ always @(posedge clk) begin
 		end
 
 		//from RS
-		ROB_s_value[b2]<=ROB_s_value_b2_;
-		ROB_s_ready[b2]<=ROB_s_ready_b2_;
-		ROB_s_jumppc[b2]<=ROB_s_jumppc_b2_;
-	end
-
-	if(SLB_to_ROB_needchange) begin
-		ROB_s_value[b4]<=ROB_s_value_b4_;
-		ROB_s_ready[b4]<=ROB_s_ready_b4_;
+		if(RS_to_ROB_needchange) begin
+			ROB_s_value[b2]<=ROB_s_value_b2_;
+			ROB_s_ready[b2]<=ROB_s_ready_b2_;
+			if(RS_to_ROB_needchange2) begin
+				ROB_s_jumppc[b2]<=ROB_s_jumppc_b2_;
+			end
+		end
+		
+		if(SLB_to_ROB_needchange) begin
+			ROB_s_value[b4]<=ROB_s_value_b4_;
+			ROB_s_ready[b4]<=ROB_s_ready_b4_;
+		end
 	end
 
 end

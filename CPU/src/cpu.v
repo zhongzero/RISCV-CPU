@@ -1,29 +1,43 @@
 // RISCV32I CPU top module
 // port modification allowed for debugging purposes
-`include "/RISCV-CPU/CPU/src/info.v"
-`include "/RISCV-CPU/CPU/src/unit/BHT.v"
-`include "/RISCV-CPU/CPU/src/unit/ICache.v"
-`include "/RISCV-CPU/CPU/src/unit/Ins_Queue.v"
-`include "/RISCV-CPU/CPU/src/unit/MemCtrl.v"
-`include "/RISCV-CPU/CPU/src/unit/Reg.v"
-`include "/RISCV-CPU/CPU/src/unit/ROB.v"
-`include "/RISCV-CPU/CPU/src/unit/RS.v"
-`include "/RISCV-CPU/CPU/src/unit/SLB.v"
+
+`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/BHT.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/ICache.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/Ins_Queue.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/MemCtrl.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/Reg.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/ROB.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/RS.v"
+`include "/mnt/e/RISCV-CPU/CPU/src/unit/SLB.v"
+
+// `include "/RISCV-CPU/CPU/src/info.v"
+// `include "/RISCV-CPU/CPU/src/unit/BHT.v"
+// `include "/RISCV-CPU/CPU/src/unit/ICache.v"
+// `include "/RISCV-CPU/CPU/src/unit/Ins_Queue.v"
+// `include "/RISCV-CPU/CPU/src/unit/MemCtrl.v"
+// `include "/RISCV-CPU/CPU/src/unit/Reg.v"
+// `include "/RISCV-CPU/CPU/src/unit/ROB.v"
+// `include "/RISCV-CPU/CPU/src/unit/RS.v"
+// `include "/RISCV-CPU/CPU/src/unit/SLB.v"
 
 module cpu(
   input  wire                 clk_in,			// system clock signal
   input  wire                 rst_in,			// reset signal
-	input  wire					        rdy_in,			// ready signal, pause cpu when low
+  input  wire			      rdy_in,			// ready signal, pause cpu when low
 
-  input  wire [ 7:0]          mem_din,		// data input bus
-  output wire [ 7:0]          mem_dout,		// data output bus
+  input  wire [ 7:0]          mem_din,	    	// data input bus
+  output wire [ 7:0]          mem_dout,		    // data output bus
   output wire [31:0]          mem_a,			// address bus (only 17:0 is used)
   output wire                 mem_wr,			// write/read signal (1 for write)
 	
-	input  wire                 io_buffer_full, // 1 if uart buffer is full
+  input  wire                 io_buffer_full,   // 1 if uart buffer is full
 	
-	output wire [31:0]			dbgreg_dout		// cpu register output (debugging demo)
+  output wire [31:0]	      dbgreg_dout       // cpu register output (debugging demo)
 );
+// always @(*) begin
+// 	$display("cpu        ","clk=",clk_in,",rst=",rst_in,", time=%t",$realtime);
+// end
 
 // implementation goes here
 
@@ -57,6 +71,7 @@ wire [`DATA_WIDTH] returnInst;
 
 //   Store_In_ICache()
 //icache
+wire insqueue_to_ICache_needchange;
 wire [`DATA_WIDTH] addr2;
 wire [`DATA_WIDTH] storeInst;
 
@@ -86,7 +101,7 @@ wire [`ROB_LR_WIDTH] ROB_R_;
 wire [`DATA_WIDTH] ROB_s_pc_b1_;
 wire [`DATA_WIDTH] ROB_s_inst_b1_;
 wire [`INST_TYPE_WIDTH] ROB_s_ordertype_b1_;
-wire [`INST_REG_WIDTH] ROB_s_dest_b1_;
+wire [`DATA_WIDTH] ROB_s_dest_b1_;
 wire [`DATA_WIDTH] ROB_s_jumppc_b1_;
 wire ROB_s_isjump_b1_;
 wire ROB_s_ready_b1_;
@@ -130,8 +145,8 @@ wire [`DATA_WIDTH] SLB_s_reorder_r1_;
 wire SLB_s_ready_r1_;
 
 //Reg
-wire [`INST_REG_WIDTH] order_rs1;
-wire [`INST_REG_WIDTH] order_rs2;
+wire [`DATA_WIDTH] order_rs1;
+wire [`DATA_WIDTH] order_rs2;
 
 wire reg_busy_order_rs1;
 wire reg_busy_order_rs2;
@@ -141,7 +156,7 @@ wire [`DATA_WIDTH] reg_reg_order_rs1;
 wire [`DATA_WIDTH] reg_reg_order_rs2;
 
 wire insqueue_to_Reg_needchange;
-wire [`INST_REG_WIDTH] order_rd;
+wire [`DATA_WIDTH] order_rd;
 
 wire reg_busy_order_rd_;
 wire [`DATA_WIDTH] reg_reorder_order_rd_;
@@ -167,18 +182,18 @@ wire [`DATA_WIDTH] ROB_to_SLB_value_b3;
 
 
 //Reg
-wire [`INST_REG_WIDTH] commit_rd;
+wire [`DATA_WIDTH] commit_rd;
 
 wire reg_busy_commit_rd;
 wire [`ROB_LR_WIDTH] reg_reorder_commit_rd;
 
 wire ROB_to_Reg_needchange;
+wire ROB_to_Reg_needchange2;
 
 wire [`DATA_WIDTH] reg_reg_commit_rd_;
 wire reg_busy_commit_rd_;
 
 //insqueue
-wire ROB_to_insqueue_needchange;
 wire [`DATA_WIDTH] pc_;
 
 /* do_RS() */  //RS
@@ -186,11 +201,16 @@ wire [`DATA_WIDTH] pc_;
 wire [`ROB_LR_WIDTH] b2;
 
 //ROB
+wire RS_to_ROB_needchange;
+wire RS_to_ROB_needchange2;
+
 wire [`DATA_WIDTH] ROB_s_value_b2_;
 wire ROB_s_ready_b2_;
 wire [`DATA_WIDTH] ROB_s_jumppc_b2_;
 
 //SLB
+wire RS_to_SLB_needchange;
+
 wire [`DATA_WIDTH] RS_to_SLB_value;
 
 
@@ -232,8 +252,9 @@ InstQueue u_InstQueue(
     .memctrl_ins_addr_              ( memctrl_ins_addr_              ),
     .memctrl_ins_remain_cycle_      ( memctrl_ins_remain_cycle_      ),
     .addr1                          ( addr1                          ),
-    .hit                            ( hit                            ),
+    .hit_in                         ( hit                         ),
     .returnInst                     ( returnInst                     ),
+    .insqueue_to_ICache_needchange  ( insqueue_to_ICache_needchange  ),
     .addr2                          ( addr2                          ),
     .storeInst                      ( storeInst                      ),
     .bht_id1                        ( bht_id1                        ),
@@ -299,27 +320,26 @@ InstQueue u_InstQueue(
     .order_rd                       ( order_rd                       ),
     .reg_busy_order_rd_             ( reg_busy_order_rd_             ),
     .reg_reorder_order_rd_          ( reg_reorder_order_rd_          ),
-    .ROB_to_insqueue_needchange     ( ROB_to_insqueue_needchange     ),
     .pc_                            ( pc_                            )
 );
 
 ICache u_ICache(
-    .clk        ( clk_in        ),
-    .rst        ( rst_in        ),
-    .rdy        ( rdy_in        ),
-    .Clear_flag ( Clear_flag ),
-    .addr1      ( addr1      ),
-    .hit        ( hit        ),
-    .returnInst ( returnInst ),
-    .addr2      ( addr2      ),
-    .storeInst  ( storeInst  )
+    .clk                            ( clk_in                                ),
+    .rst                            ( rst_in                                ),
+    .rdy                            ( rdy_in                                ),
+    .addr1                          ( addr1                             ),
+    .hit                            ( hit                               ),
+    .returnInst                     ( returnInst                        ),
+    .insqueue_to_ICache_needchange  ( insqueue_to_ICache_needchange     ),
+    .addr2                          ( addr2                             ),
+    .storeInst                      ( storeInst                         )
 );
 
 MemCtrl u_MemCtrl(
-    .clk                            ( clk                            ),
-    .rst                            ( rst                            ),
-    .rdy                            ( rdy                            ),
-    .r_nw_in                        ( mem_wr                        ),
+    .clk                            ( clk_in                            ),
+    .rst                            ( rst_in                            ),
+    .rdy                            ( rdy_in                            ),
+    .r_or_w                         ( mem_wr                        ),
     .a_in                           ( mem_a                           ),
     .d_in                           ( mem_dout                           ),
     .d_out                          ( mem_din                          ),
@@ -361,6 +381,7 @@ Reg u_Reg(
     .reg_busy_commit_rd         ( reg_busy_commit_rd         ),
     .reg_reorder_commit_rd      ( reg_reorder_commit_rd      ),
     .ROB_to_Reg_needchange      ( ROB_to_Reg_needchange      ),
+    .ROB_to_Reg_needchange2     ( ROB_to_Reg_needchange2     ),
     .reg_reg_commit_rd_         ( reg_reg_commit_rd_         ),
     .reg_busy_commit_rd_        ( reg_busy_commit_rd_        )
 );
@@ -383,9 +404,9 @@ ROB u_ROB(
     .reg_busy_commit_rd           ( reg_busy_commit_rd           ),
     .reg_reorder_commit_rd        ( reg_reorder_commit_rd        ),
     .ROB_to_Reg_needchange        ( ROB_to_Reg_needchange        ),
+    .ROB_to_Reg_needchange2       ( ROB_to_Reg_needchange2       ),
     .reg_reg_commit_rd_           ( reg_reg_commit_rd_           ),
     .reg_busy_commit_rd_          ( reg_busy_commit_rd_          ),
-    .ROB_to_insqueue_needchange   ( ROB_to_insqueue_needchange   ),
     .pc_                          ( pc_                          ),
     .Clear_flag_                  ( Clear_flag                  ),
     .h1                           ( h1                           ),
@@ -407,6 +428,8 @@ ROB u_ROB(
     .ROB_s_jumppc_b1_             ( ROB_s_jumppc_b1_             ),
     .ROB_s_isjump_b1_             ( ROB_s_isjump_b1_             ),
     .ROB_s_ready_b1_              ( ROB_s_ready_b1_              ),
+    .RS_to_ROB_needchange         ( RS_to_ROB_needchange         ),
+    .RS_to_ROB_needchange2        ( RS_to_ROB_needchange2        ),
     .b2                           ( b2                           ),
     .ROB_s_value_b2_              ( ROB_s_value_b2_              ),
     .ROB_s_ready_b2_              ( ROB_s_ready_b2_              ),
@@ -423,9 +446,12 @@ RS u_RS(
     .rdy                       ( rdy_in                       ),
     .Clear_flag                ( Clear_flag                ),
     .b2                        ( b2                        ),
+    .RS_to_ROB_needchange      ( RS_to_ROB_needchange      ),
+    .RS_to_ROB_needchange2     ( RS_to_ROB_needchange2     ),
     .ROB_s_value_b2_           ( ROB_s_value_b2_           ),
     .ROB_s_ready_b2_           ( ROB_s_ready_b2_           ),
     .ROB_s_jumppc_b2_          ( ROB_s_jumppc_b2_          ),
+    .RS_to_SLB_needchange      ( RS_to_SLB_needchange      ),
     .RS_to_SLB_value           ( RS_to_SLB_value           ),
     .RS_unbusy_pos             ( RS_unbusy_pos             ),
     .insqueue_to_RS_needchange ( insqueue_to_RS_needchange ),
@@ -484,6 +510,7 @@ SLB u_SLB(
     .ROB_s_ready_b4_              ( ROB_s_ready_b4_              ),
     .SLB_to_RS_needchange         ( SLB_to_RS_needchange         ),
     .SLB_to_RS_loadvalue          ( SLB_to_RS_loadvalue          ),
+    .RS_to_SLB_needchange         ( RS_to_SLB_needchange         ),
     .b2                           ( b2                           ),
     .RS_to_SLB_value              ( RS_to_SLB_value              ),
     .b3                           ( b3                           ),
@@ -497,7 +524,6 @@ BHT u_BHT(
     .clk                    ( clk_in                    ),
     .rst                    ( rst_in                    ),
     .rdy                    ( rdy_in                    ),
-    .Clear_flag             ( Clear_flag             ),
     .bht_id1                ( bht_id1                ),
     .bht_get                ( bht_get                ),
     .ROB_to_BHT_needchange  ( ROB_to_BHT_needchange  ),

@@ -1,3 +1,5 @@
+# 生成测试点相应的输入数据
+
 #!/bin/sh
 # build testcase
 ./build_test.sh $@
@@ -9,3 +11,6 @@ if [ -f ./testcase/$@.ans ]; then cp ./testcase/$@.ans ./test/test.ans; fi
 # Example:
 # - iverilog/gtkwave/vivado
 # - diff ./test/test.ans ./test/test.out
+
+
+# 编译脚本 ./run_test.sh sim/000_array_test1 (后面跟测试点在testcase中的名称)
