@@ -1,5 +1,6 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
 
 module EX (
 	input wire [`INST_TYPE_WIDTH] ordertype,
@@ -11,6 +12,9 @@ module EX (
 	output reg [`DATA_WIDTH] jumppc
 );
 always @(*) begin
+    value=0;//for_latch
+    jumppc=0;//for_latch
+    
 	if(ordertype==`LUI)value=A;
 	if(ordertype==`AUIPC)value=pc+A;
 

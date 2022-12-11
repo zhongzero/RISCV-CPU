@@ -1,25 +1,25 @@
 // riscv top module file
 // modification allowed for d[ebugging purposes
 
-// `include "/RISCV-CPU/CPU/src/xxx" windowsä¸‹
-// `include "/mnt/e/RISCV-CPU/CPU/src/xxx" wslä¸‹
+// `include "/RISCV-CPU/CPU/src/xxx" windowsä¸?
+// `include "/mnt/e/RISCV-CPU/CPU/src/xxx" wslä¸?
 
-`include "/mnt/e/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/common/fifo/fifo.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_tx.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_rx.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_baud_clk.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/interface/hci.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/interface/ram.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/Decode.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/EX.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/IsBranch.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/IsLoad.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/func/IsStore.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
-`include "/mnt/e/RISCV-CPU/CPU/src/cpu.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/fifo/fifo.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_tx.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_rx.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/common/uart/uart_baud_clk.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/interface/hci.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/interface/ram.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/Decode.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/EX.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/IsBranch.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/IsLoad.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/func/IsStore.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/cpu.v"
 
 // `include "/RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
 // `include "/RISCV-CPU/CPU/src/common/fifo/fifo.v"
@@ -38,6 +38,23 @@
 // `include "/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/cpu.v"
 
+
+ `include "E://RISCV-CPU/CPU/src/common/block_ram/block_ram.v"
+ `include "E://RISCV-CPU/CPU/src/common/fifo/fifo.v"
+ `include "E://RISCV-CPU/CPU/src/common/uart/uart.v"
+ `include "E://RISCV-CPU/CPU/src/common/uart/uart_tx.v"
+ `include "E://RISCV-CPU/CPU/src/common/uart/uart_rx.v"
+ `include "E://RISCV-CPU/CPU/src/common/uart/uart_baud_clk.v"
+ `include "E://RISCV-CPU/CPU/src/interface/hci.v"
+ `include "E://RISCV-CPU/CPU/src/interface/ram.v"
+ `include "E://RISCV-CPU/CPU/src/func/Decode.v"
+ `include "E://RISCV-CPU/CPU/src/func/EX.v"
+ `include "E://RISCV-CPU/CPU/src/func/Extend_LoadData.v"
+ `include "E://RISCV-CPU/CPU/src/func/IsBranch.v"
+ `include "E://RISCV-CPU/CPU/src/func/IsLoad.v"
+ `include "E://RISCV-CPU/CPU/src/func/IsStore.v"
+ `include "E://RISCV-CPU/CPU/src/info.v"
+ `include "E://RISCV-CPU/CPU/src/cpu.v"
 
 module riscv_top
 #(

@@ -1,5 +1,7 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
+
 module MemCtrl (
 	input wire clk,
 	input wire rst,
@@ -76,6 +78,10 @@ reg [`RAM_DATA_WIDTH] ins_in,ins_ans;// ins_in : meaningless
 
 // do_memctrl() part1
 always @(*) begin
+    d_in=0;//for_latch
+    ins_ans=0;//for_latch
+    data_ans=0;//for_latch
+    data_in=0;//for_latch
 
 	flag1=!( (1<=memctrl_ins_remain_cycle&&memctrl_ins_remain_cycle<=3)||memctrl_ins_remain_cycle==5 )  
 		&&memctrl_data_remain_cycle;

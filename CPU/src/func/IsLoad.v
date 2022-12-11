@@ -1,5 +1,6 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
 
 module IsLoad (
 	input wire [`INST_TYPE_WIDTH] type,

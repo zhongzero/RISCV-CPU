@@ -91,7 +91,8 @@ initial begin
     ram[i] = 0;
   end
   // $readmemh("/RISCV-CPU/CPU/test/test.data", ram);
-  $readmemh("/mnt/e/RISCV-CPU/CPU/test/test.data", ram); // add test.data to vivado project or specify a valid file path
+//    $readmemh("/mnt/e/RISCV-CPU/CPU/test/test.data", ram); // add test.data to vivado project or specify a valid file path
+     $readmemh("E://RISCV-CPU/CPU/test/test.data", ram);
 end
 
 endmodule

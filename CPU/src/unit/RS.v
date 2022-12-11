@@ -1,5 +1,7 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
+
 // `include "/RISCV-CPU/CPU/src/func/EX.v"
 module RS (
 	input wire clk,
@@ -66,7 +68,7 @@ module RS (
 // end
 
 reg [`INST_TYPE_WIDTH] RS_s_ordertype[`MaxRS-1:0];
-reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0];
+//reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0]; //for_debug
 reg [`DATA_WIDTH] RS_s_pc[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_jumppc[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_vj[`MaxRS-1:0];
@@ -85,7 +87,7 @@ integer i,j;
 reg [`RS_LR_WIDTH] RS_id;
 wire [`DATA_WIDTH] value;
 wire [`DATA_WIDTH] jumppc;
-wire [`INST_TYPE_WIDTH] tmp_ordertype=RS_s_ordertype[RS_id];//for_debug
+//wire [`INST_TYPE_WIDTH] tmp_ordertype=RS_s_ordertype[RS_id];//for_debug
 EX u_EX(
     .ordertype ( RS_s_ordertype[RS_id] ),
     .vj        ( RS_s_vj[RS_id]        ),
@@ -102,9 +104,15 @@ always @(*) begin
 	RS_to_ROB_needchange=0;
 	RS_to_ROB_needchange2=0;
 	RS_to_SLB_needchange=0;
+	
+	b2=0;//for_latch
+	ROB_s_value_b2_=0;//for_latch
+	ROB_s_ready_b2_=0;//for_latch
+	ROB_s_jumppc_b2_=0;//for_latch
+	RS_to_SLB_value=0;//for_latch
 
 	RS_id=-1;
-	for(i=`MaxRS-1;i>=0;i--) begin
+	for(i=`MaxRS-1;i>=0;i=i-1) begin
 		if(RS_s_busy[i]&&RS_s_qj[i]==-1&&RS_s_qk[i]==-1) begin
 			RS_id=i;
 		end
@@ -140,7 +148,7 @@ end
 
 always @(*) begin
 	RS_unbusy_pos=-1;
-	for(j=`MaxRS-1;j>=0;j--) begin
+	for(j=`MaxRS-1;j>=0;j=j-1) begin
 		if(!RS_s_busy[j]) begin
 			RS_unbusy_pos=j;
 		end
@@ -152,7 +160,7 @@ always @(posedge clk) begin
 		// RS
 		for(i=0;i<`MaxRS;i=i+1) begin
 			RS_s_ordertype[i]<=0;
-			RS_s_inst[i]<=0;
+//			RS_s_inst[i]<=0;
 			RS_s_pc[i]<=0;
 			RS_s_jumppc[i]<=0;
 			RS_s_vj[i]<=0;
@@ -167,7 +175,7 @@ always @(posedge clk) begin
 	else if(~rdy) begin
 	end
 	else if(Clear_flag) begin
-		for(i=0;i<`MaxRS;i++) begin
+		for(i=0;i<`MaxRS;i=i+1) begin
 			RS_s_busy[i]<=0;
 			RS_s_qj[i]<=-1;RS_s_qk[i]<=-1;
 		end
@@ -177,7 +185,7 @@ always @(posedge clk) begin
 		if(RS_id!=-1) begin
 			// 修改 RS
 			RS_s_busy[RS_id]<=0;
-			for(i=0;i<`MaxRS;i++) begin
+			for(i=0;i<`MaxRS;i=i+1) begin
 				if(RS_s_busy[i]) begin
 					if(RS_s_qj[i]==b2) begin
 						RS_s_qj[i]<=-1;RS_s_vj[i]<=value;
@@ -196,7 +204,7 @@ always @(posedge clk) begin
 			RS_s_vk[r2]<=RS_s_vk_r2_;
 			RS_s_qj[r2]<=RS_s_qj_r2_;
 			RS_s_qk[r2]<=RS_s_qk_r2_;
-			RS_s_inst[r2]<=RS_s_inst_r2_;
+//			RS_s_inst[r2]<=RS_s_inst_r2_;
 			RS_s_ordertype[r2]<=RS_s_ordertype_r2_;
 			RS_s_pc[r2]<=RS_s_pc_r2_;
 			RS_s_jumppc[r2]<=RS_s_jumppc_r2_;
@@ -207,7 +215,7 @@ always @(posedge clk) begin
 
 		// from ROB
 		if(ROB_to_RS_needchange) begin
-			for(i=0;i<`MaxRS;i++) begin
+			for(i=0;i<`MaxRS;i=i+1) begin
 				if(RS_s_busy[i]) begin
 					if(RS_s_qj[i]==b3) begin
 						RS_s_qj[i]<=-1;RS_s_vj[i]<=ROB_to_RS_value_b3;
@@ -221,7 +229,7 @@ always @(posedge clk) begin
 
 		//from SLB
 		if(SLB_to_RS_needchange) begin
-			for(i=0;i<`MaxRS;i++) begin
+			for(i=0;i<`MaxRS;i=i+1) begin
 				if(RS_s_busy[i]) begin
 					if(RS_s_qj[i]==b4) begin
 						RS_s_qj[i]<=-1;RS_s_vj[i]<=SLB_to_RS_loadvalue;

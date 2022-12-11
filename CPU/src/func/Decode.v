@@ -1,5 +1,6 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
 
 module Decode (
 	input wire [`DATA_WIDTH] inst,
@@ -19,6 +20,10 @@ always @(*) begin
 	order_rd=inst[11:7];
 	order_rs1=inst[19:15];
 	order_rs2=inst[24:20];
+	
+	order_imm=0;//for_latch
+	order_type=0;//for_latch
+	
 	if(type1==7'h37||type1==7'h17) begin //U类型
 		if(type1==7'h37)order_type=`LUI;
 		if(type1==7'h17)order_type=`AUIPC;
@@ -94,16 +99,16 @@ always @(*) begin
 		if(order_imm>>11)order_imm=order_imm|32'hfffff000;
 	end
 	if(order_type==`ADDI||order_type==`SLTI||order_type==`SLTIU||order_type==`XORI||order_type==`ORI||order_type==`ANDI) begin
-		if(order_imm>>11)order_imm|=32'hfffff000;
+		if(order_imm[11])order_imm[31:12]=20'hfffff;
 	end
 	if(order_type==`SB||order_type==`SH||order_type==`SW) begin
-		if(order_imm>>11)order_imm|=32'hfffff000;
+		if(order_imm[11])order_imm[31:12]=20'hfffff;
 	end
 	if(order_type==`JAL) begin
-		if(order_imm>>20)order_imm|=32'hfff00000;
+		if(order_imm[20])order_imm[31:21]=11'h7ff;
 	end
 	if(order_type==`BEQ||order_type==`BNE||order_type==`BLT||order_type==`BGE||order_type==`BLTU||order_type==`BGEU) begin
-		if(order_imm>>12)order_imm|=32'hffffe000;
+		if(order_imm[12])order_imm[31:13]=19'h7ffff;
 	end
 end
 

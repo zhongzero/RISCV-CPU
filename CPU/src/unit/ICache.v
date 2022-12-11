@@ -1,5 +1,6 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
 module ICache (
 	input wire clk,
 	input wire rst,
@@ -31,13 +32,15 @@ reg [`DATA_WIDTH] icache_inst[`MaxICache-1:0];
 
 integer i,j;
 
-wire icache_valid0=icache_valid[0];//for_debug
+//wire icache_valid0=icache_valid[0];//for_debug
 
 
 reg [`ICacheIndexSize-1:0] b5;
 
 // Search_In_ICache()
 always @(*) begin
+    returnInst=0;//for_latch
+    
 	b5=addr1[`ICacheIndexSize-1:0];
 	if(icache_valid[b5]&&icache_tag[b5]==addr1[31:`ICacheIndexSize]) begin
 		hit=1;
@@ -56,7 +59,7 @@ end
 always @(posedge clk) begin
 	if(rst) begin
 		// ICache
-		for(i=0;i<`MaxICache;i++) begin
+		for(i=0;i<`MaxICache;i=i+1) begin
 			icache_valid[i]<=0;
 			icache_tag[i]<=0;
 			icache_inst[i]<=0;

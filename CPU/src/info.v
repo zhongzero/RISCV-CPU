@@ -5,26 +5,26 @@
 `define SLB_LR_WIDTH 31:0 //temporary
 `define ROB_LR_WIDTH 31:0 //temporary
 `define RS_LR_WIDTH 31:0 //temporary
-`define BHT_LR_WIDTH 31:0 //temporary
+`define BHT_LR_WIDTH 7:0 //temporary
 `define ICache_TAG_WIDTH 26:0 //temporary
 `define RAM_DATA_WIDTH 7:0
 
 
 //size
 `define MaxIns 32
-`define MaxRS 32
-`define MaxROB 32
-`define MaxSLB 32
+`define MaxRS 16
+`define MaxROB 16
+`define MaxSLB 16
 `define MaxReg 32
-`define ICacheIndexSize 8
-`define MaxICache 256
-`define MaxBHT (1<<12)
+`define ICacheIndexSize 7
+`define MaxICache 128
+`define MaxBHT (1<<8)
 
 
 
 //inst_type
 
-//U类型 用于操作长立即数的指令 0~1
+//U类型 用于操作长立即数的指�? 0~1
 `define LUI 6'd0
 `define AUIPC 6'd1
 

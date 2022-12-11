@@ -1,5 +1,7 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
+
 // `include "/RISCV-CPU/CPU/src/func/Decode.v"
 // `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
 // `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
@@ -182,7 +184,7 @@ wire [`DATA_WIDTH] order_rs1_;
 wire [`DATA_WIDTH] order_rs2_;
 wire [`DATA_WIDTH] order_imm;
 
-wire [31:0] order_inst=Ins_queue_s_inst[Ins_queue_L];//for_debug
+//wire [31:0] order_inst=Ins_queue_s_inst[Ins_queue_L];//for_debug
 
 Decode u_Decode2(
     .inst ( Ins_queue_s_inst[Ins_queue_L] ),
@@ -227,6 +229,15 @@ always @(*) begin
 
 	insqueue_to_memctrl_needchange=0;
 	insqueue_to_ICache_needchange=0;
+	
+	addr1=0;//for_latch
+	addr2=0;//for_latch
+	memctrl_ins_addr_=0;//for_latch
+	memctrl_ins_remain_cycle_=0;//for_latch
+	storeInst=0;//for_latch
+	bht_id1=0;//for_latch
+    g=0;//for_latch
+    inst=0;//for_latch
 
 	if(!Ins_queue_is_waiting_ins&&Ins_queue_size!=`MaxIns) begin
 		addr1=pc;
@@ -264,7 +275,7 @@ always @(*) begin
 				else  begin
 					if(order_type_0==`JALR);
 					else  begin
-						bht_id1=inst[11:0];
+						bht_id1=inst[`BHT_LR_WIDTH];
 						// BranchJudge(Ins_queue_s_inst[g][11:0]);
 					end
 				end
@@ -288,7 +299,46 @@ always @(*) begin
 	insqueue_to_ROB_size_addflag=0;
 	
 	insqueue_to_Reg_needchange=0;
-
+	
+	h1=0;//for_latch
+	h2=0;//for_latch
+	b1=0;//for_latch
+	ROB_R_=0;//for_latch
+	ROB_s_pc_b1_=0;//for_latch
+	ROB_s_inst_b1_=0;//for_latch
+	ROB_s_ordertype_b1_=0;//for_latch
+	ROB_s_dest_b1_=0;//for_latch
+	ROB_s_jumppc_b1_=0;//for_latch
+	ROB_s_isjump_b1_=0;//for_latch
+	ROB_s_ready_b1_=0;//for_latch
+	r2=0;//for_latch
+	RS_s_vj_r2_=0;//for_latch
+	RS_s_vk_r2_=0;//for_latch
+	RS_s_qj_r2_=0;//for_latch
+	RS_s_qk_r2_=0;//for_latch
+	RS_s_inst_r2_=0;//for_latch
+	RS_s_ordertype_r2_=0;//for_latch
+	RS_s_jumppc_r2_=0;//for_latch
+	RS_s_pc_r2_=0;//for_latch
+	RS_s_A_r2_=0;//for_latch
+	RS_s_reorder_r2_=0;//for_latch
+	RS_s_busy_r2_=0;//for_latch
+	r1=0;//for_latch
+	SLB_R_=0;//for_latch
+	SLB_s_vj_r1_=0;//for_latch
+	SLB_s_vk_r1_=0;//for_latch
+	SLB_s_qj_r1_=0;//for_latch
+	SLB_s_qk_r1_=0;//for_latch
+	SLB_s_inst_r1_=0;//for_latch
+	SLB_s_ordertype_r1_=0;//for_latch
+	SLB_s_pc_r1_=0;//for_latch
+	SLB_s_A_r1_=0;//for_latch
+	SLB_s_reorder_r1_=0;//for_latch
+	SLB_s_ready_r1_=0;//for_latch
+	reg_busy_order_rd_=0;//for_latch
+	reg_reorder_order_rd_=0;//for_latch
+	
+	
 
 	//InstructionQueue为空，因此取消issue InstructionQueue中的指令
 	if(Ins_queue_size==0);
@@ -304,11 +354,11 @@ always @(*) begin
 			else begin
 				insqueue_to_SLB_needchange=1;
 				insqueue_to_ROB_needchange=1;
-				//r为该指令SLB准备存放的位置
+				//r为该指令SLB准备存放的位�?
 				r1=(SLB_R+1)%`MaxSLB;
 				SLB_R_=r1;insqueue_to_SLB_size_addflag=1;
 				
-				//b为该指令ROB准备存放的位置
+				//b为该指令ROB准备存放的位�?
 				b1=(ROB_R+1)%`MaxROB;
 				ROB_R_=b1;insqueue_to_ROB_size_addflag=1;
 
@@ -327,7 +377,7 @@ always @(*) begin
 
 
 				//根据rs1寄存器的情况决定是否给其renaming(vj;qj)
-				//如果rs1寄存器上为busy且其最后一次修改对应的ROB位置还未commit，则renaming
+				//如果rs1寄存器上为busy且其�?后一次修改对应的ROB位置还未commit，则renaming
 				if(reg_busy_order_rs1) begin
 					h1=reg_reorder_order_rs1;
 					if(ROB_s_ready_h1) begin
@@ -341,7 +391,7 @@ always @(*) begin
 
 				if(isstore) begin// store类型  （有rs2的）
 					//根据rs2寄存器的情况决定是否给其renaming(vk;qk)
-					//如果rs2寄存器上为busy且其最后一次修改对应的ROB位置还未commit，则renaming
+					//如果rs2寄存器上为busy且其�?后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs2) begin
 						h2=reg_reorder_order_rs2;
 						if(ROB_s_ready_h2) begin
@@ -368,10 +418,10 @@ always @(*) begin
 				end
 			end
 		end
-		else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳转(BEQ;BNE;BLE___) or 有条件跳转(JAL;JALR)
+		else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳�?(BEQ;BNE;BLE___) or 有条件跳�?(JAL;JALR)
 			
-			//找到一个空的RS的位置，r为找到的空的RS的位置
-			r2=RS_unbusy_pos; //找不到返回-1
+			//找到�?个空的RS的位置，r为找到的空的RS的位�?
+			r2=RS_unbusy_pos; //找不到返�?-1
 			// r2=-1;
 			// for(i=0;i<`MaxRS;i++) begin
 			// 	if(!RS_s_busy[i]) begin
@@ -381,7 +431,7 @@ always @(*) begin
 			//RS满了，因此取消issue InstructionQueue中的指令
 			if(r2==-1);
 			else begin
-				//b为该指令ROB准备存放的位置
+				//b为该指令ROB准备存放的位�?
 				b1=(ROB_R+1)%`MaxROB;
 				//将该指令从Ins_queue删去
 				insqueue_size_internal_subflag=1;
@@ -398,9 +448,9 @@ always @(*) begin
 
 				//修改RS
 				insqueue_to_RS_needchange=1;
-				if( Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h37&&Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h17 && Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h6f ) begin// 不为LUI;AUIPC;JAL (有rs1的)
+				if( Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h37&&Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h17 && Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h6f ) begin// 不为LUI;AUIPC;JAL (有rs1�?)
 					//根据rs1寄存器的情况决定是否给其renaming(vj;qj)
-					//如果rs1寄存器上为busy且其最后一次修改对应的ROB位置还未commit，则renaming
+					//如果rs1寄存器上为busy且其�?后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs1) begin
 						h1=reg_reorder_order_rs1;
 						if(ROB_s_ready_h1) begin
@@ -414,9 +464,9 @@ always @(*) begin
 				end
 				else RS_s_qj_r2_=-1;
 
-				if( Ins_queue_s_inst[Ins_queue_L][6:0]==7'h33 || Ins_queue_s_inst[Ins_queue_L][6:0]==7'h63) begin// (ADD__AND) or 有条件跳转  （有rs2的）
+				if( Ins_queue_s_inst[Ins_queue_L][6:0]==7'h33 || Ins_queue_s_inst[Ins_queue_L][6:0]==7'h63) begin// (ADD__AND) or 有条件跳�?  （有rs2的）
 					//根据rs2寄存器的情况决定是否给其renaming(vk;qk)
-					//如果rs2寄存器上为busy且其最后一次修改对应的ROB位置还未commit，则renaming
+					//如果rs2寄存器上为busy且其�?后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs2) begin
 						h2=reg_reorder_order_rs2;
 						if(ROB_s_ready_h2) begin
@@ -437,7 +487,7 @@ always @(*) begin
 				RS_s_busy_r2_=1;
 
 				//修改register
-				if(Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h63) begin//不为 有条件跳转  (其他都有rd)
+				if(Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h63) begin//不为 有条件跳�?  (其他都有rd)
 					insqueue_to_Reg_needchange=1;
 					reg_reorder_order_rd_=b1;reg_busy_order_rd_=1;
 				end
@@ -456,7 +506,7 @@ always @(posedge clk) begin
 		pc<=0;
 
 		//Ins_queue
-		for(i=0;i<`MaxIns;i++) begin
+		for(i=0;i<`MaxIns;i=i+1) begin
 			Ins_queue_s_inst[i]<=0;
 			Ins_queue_s_pc[i]<=0;
 			Ins_queue_s_jumppc[i]<=0;
@@ -533,7 +583,7 @@ always @(posedge clk) begin
 					Ins_queue_L<=(Ins_queue_L+1)%`MaxIns;
 				end
 			end
-			else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳转(BEQ;BNE;BLE___) or 有条件跳转(JAL;JALR)
+			else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳�?(BEQ;BNE;BLE___) or 有条件跳�?(JAL;JALR)
 				if(r2==-1);
 				else begin
 					//将该指令从Ins_queue删去

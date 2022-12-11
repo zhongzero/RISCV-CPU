@@ -1,5 +1,7 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
+
 // `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
 // `include "/RISCV-CPU/CPU/src/func/IsStore.v"
 module ROB (
@@ -146,9 +148,17 @@ always @(*) begin
 	
 	ROB_to_BHT_needchange=0;
 	ROB_to_BHT_needchange2=0;
-
-	
+		
 	Clear_flag_=0;
+	
+	b3=0;//for_latch
+	bht_id2=0;//for_latch
+	ROB_to_RS_value_b3=0;//for_latch
+	ROB_to_SLB_value_b3=0;//for_latch
+	commit_rd=0;//for_latch
+	reg_reg_commit_rd_=0;//for_latch
+	reg_busy_commit_rd_=0;//for_latch
+	pc_=0;//for_latch
 
 	if(!ROB_size);
 	else begin
@@ -204,7 +214,7 @@ always @(*) begin
 
 						// update BHT
 						ROB_to_BHT_needchange=1;
-						bht_id2=ROB_s_inst[b3][11:0];
+						bht_id2=ROB_s_inst[b3][`BHT_LR_WIDTH];
 						// if(BHT_s[bht_id2][0]==0&&BHT_s[bht_id2][1]==0) begin
 						// 	BHT_s[bht_id2][0]=0;BHT_s[bht_id2][1]=1;
 						// end
@@ -239,7 +249,7 @@ always @(*) begin
 					else begin//预测成功
 						// update BHT
 						ROB_to_BHT_needchange2=1;
-						bht_id2=ROB_s_inst[b3][11:0];
+						bht_id2=ROB_s_inst[b3][`BHT_LR_WIDTH];
 						// if(BHT_s[bht_id2][0]==0&&BHT_s[bht_id2][1]==0) begin
 						// 	BHT_s[bht_id2][0]=0;BHT_s[bht_id2][1]=0;
 						// end
@@ -347,7 +357,7 @@ always @(posedge clk) begin
 	end
 	else if(Clear_flag) begin
 		ROB_L<=1;ROB_R<=0;ROB_size<=0;
-		for(i=0;i<`MaxROB;i++)ROB_s_ready[i]<=0;
+		for(i=0;i<`MaxROB;i=i+1)ROB_s_ready[i]<=0;
 	end
 	else begin
 		// for ROB_size

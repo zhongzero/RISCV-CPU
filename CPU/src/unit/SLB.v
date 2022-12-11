@@ -1,5 +1,7 @@
-`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
+`include "E://RISCV-CPU/CPU/src/info.v"
+
 // `include "/RISCV-CPU/CPU/src/func/Extend_LoadData.v"
 // `include "/RISCV-CPU/CPU/src/func/IsLoad.v"
 module SLB (
@@ -82,7 +84,7 @@ module SLB (
 // end
 
 reg [`INST_TYPE_WIDTH] SLB_s_ordertype[`MaxSLB-1:0];
-reg [`DATA_WIDTH] SLB_s_inst[`MaxSLB-1:0];
+//reg [`DATA_WIDTH] SLB_s_inst[`MaxSLB-1:0];//for_debug
 reg [`DATA_WIDTH] SLB_s_pc[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_vj[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_vk[`MaxSLB-1:0];
@@ -95,7 +97,7 @@ reg [`SLB_LR_WIDTH] SLB_L,SLB_R,SLB_size;
 reg SLB_is_waiting_data;
 
 
-wire SLB_s_ready_L=SLB_s_ready[r3];//for_debug
+//wire SLB_s_ready_L=SLB_s_ready[r3];//for_debug
 
 
 wire [`DATA_WIDTH] loadvalue;
@@ -130,6 +132,16 @@ always @(*) begin
 	SLB_to_ROB_needchange=0;
 
 	SLB_to_RS_needchange=0;
+	
+	b4=0;//for_latch
+	r3=0;//for_latch
+	SLB_to_memctrl_ordertype=0;//for_latch
+	SLB_to_memctrl_vj=0;//for_latch
+	SLB_to_memctrl_vk=0;//for_latch
+	SLB_to_memctrl_A=0;//for_latch
+	ROB_s_value_b4_=0;//for_latch
+	ROB_s_ready_b4_=0;//for_latch
+	SLB_to_RS_loadvalue=0;//for_latch
 
 
 	if(memctrl_data_ok) begin
@@ -201,7 +213,7 @@ always @(posedge clk) begin
 		// SLB
 		for(i=0;i<`MaxSLB;i=i+1) begin
 			SLB_s_ordertype[i]<=0;
-			SLB_s_inst[i]<=0;
+//			SLB_s_inst[i]<=0;
 			SLB_s_pc[i]<=0;
 			SLB_s_vj[i]<=0;
 			SLB_s_vk[i]<=0;
@@ -218,7 +230,7 @@ always @(posedge clk) begin
 	end
 	else if(Clear_flag) begin
 		SLB_L<=1;SLB_R<=0;SLB_size<=0;SLB_is_waiting_data<=0;
-		for(i=0;i<`MaxSLB;i++) begin
+		for(i=0;i<`MaxSLB;i=i+1) begin
 			SLB_s_qj[i]<=-1;SLB_s_qk[i]<=-1;
 		end
 	end
@@ -233,7 +245,7 @@ always @(posedge clk) begin
 				// update SLB
 				SLB_L<=(SLB_L+1)%`MaxSLB;
 				SLB_s_qj[SLB_L]<=-1;SLB_s_qk[SLB_L]<=-1;
-				for(i=0;i<`MaxSLB;i++) begin
+				for(i=0;i<`MaxSLB;i=i+1) begin
 					if(SLB_s_qj[i]==b4) begin
 						SLB_s_qj[i]<=-1;SLB_s_vj[i]<=loadvalue;
 					end
@@ -270,7 +282,7 @@ always @(posedge clk) begin
 			SLB_s_vk[r1]<=SLB_s_vk_r1_;
 			SLB_s_qj[r1]<=SLB_s_qj_r1_;
 			SLB_s_qk[r1]<=SLB_s_qk_r1_;
-			SLB_s_inst[r1]<=SLB_s_inst_r1_;
+//			SLB_s_inst[r1]<=SLB_s_inst_r1_;
 			SLB_s_ordertype[r1]<=SLB_s_ordertype_r1_;
 			SLB_s_pc[r1]<=SLB_s_pc_r1_;
 			SLB_s_A[r1]<=SLB_s_A_r1_;
@@ -280,7 +292,7 @@ always @(posedge clk) begin
 
 		//from RS
 		if(RS_to_SLB_needchange) begin
-			for(i=0;i<`MaxSLB;i++) begin
+			for(i=0;i<`MaxSLB;i=i+1) begin
 				if(SLB_s_qj[i]==b2) begin
 					SLB_s_qj[i]<=-1;SLB_s_vj[i]<=RS_to_SLB_value;
 				end
@@ -292,7 +304,7 @@ always @(posedge clk) begin
 
 		// from ROB
 		if(ROB_to_SLB_needchange) begin
-			for(i=0;i<`MaxSLB;i++) begin
+			for(i=0;i<`MaxSLB;i=i+1) begin
 				if(SLB_s_qj[i]==b3) begin
 					SLB_s_qj[i]<=-1;SLB_s_vj[i]<=ROB_to_SLB_value_b3;
 				end
@@ -302,7 +314,7 @@ always @(posedge clk) begin
 			end
 		end
 		if(ROB_to_SLB_needchange2) begin
-			for(i=0;i<`MaxSLB;i++) begin
+			for(i=0;i<`MaxSLB;i=i+1) begin
 				if(SLB_s_reorder[i]==b3) begin
 					SLB_s_ready[i]<=1;
 				end

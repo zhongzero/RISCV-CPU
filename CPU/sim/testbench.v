@@ -1,8 +1,9 @@
 // testbench top module file
 // for simulation only
 
-`include "/mnt/e/RISCV-CPU/CPU/src/riscv_top.v"
+//`include "/mnt/e/RISCV-CPU/CPU/src/riscv_top.v"
 // `include "/RISCV-CPU/CPU/src/riscv_top.v"
+`include "E://RISCV-CPU/CPU/src/riscv_top.v"
 
 `timescale 1ns/1ps
 module testbench;
@@ -24,7 +25,7 @@ initial begin
   clk=0;
   rst=1;
   repeat(50) begin
-    count++;
+    count=count+1;
     // $display("!!!!!!!!!!",count);
     #1 clk=!clk;
     // if(count==10)$finish;
