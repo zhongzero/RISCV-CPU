@@ -47,6 +47,7 @@ always @(*) begin
 		returnInst=icache_inst[b5];
 	end
 	else hit=0;
+//	hit=0;
 end
 
 reg [`ICacheIndexSize-1:0] b6;

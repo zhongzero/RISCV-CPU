@@ -127,6 +127,12 @@ IsStore u_IsStore(
     .is_Store  ( isstore  )
 );
 
+wire isload;
+IsLoad u_IsLoad(
+    .type ( ROB_s_ordertype[b3] ),
+    .is_Load  ( isload  )
+);
+
 integer i;
 
 wire ROB_s_ready_L=ROB_s_ready[b3];//for_debug
@@ -282,46 +288,51 @@ always @(*) begin
 			end
 		end
 		else begin//Load or calc
-			if(!ROB_s_ready[b3]);
-			else begin
-				// update ROB
-				ROB_size_internal_subflag=1;
-
-				// update register
-				ROB_to_Reg_needchange=1;
-				commit_rd=ROB_s_dest[b3];
-				reg_reg_commit_rd_=ROB_s_value[b3];
-				if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3) begin
-					ROB_to_Reg_needchange2=1;
-					reg_busy_commit_rd_=0;
-				end
-
-				// update RS
-				ROB_to_RS_needchange=1;
-				ROB_to_RS_value_b3=ROB_s_value[b3];
-				// for(i=0;i<`MaxRS;i++) begin
-				// 	if(RS_s_busy[i]) begin
-				// 		if(RS_s_qj[i]==b3) begin
-				// 			RS_s_qj[i]=-1;RS_s_vj[i]=ROB_s_value[b3];
-				// 		end
-				// 		if(RS_s_qk[i]==b3) begin
-				// 			RS_s_qk[i]=-1;RS_s_vk[i]=ROB_s_value[b3];
-				// 		end
-				// 	end
-				// end
-
-				// update SLB
-				ROB_to_SLB_needchange=1;
-				ROB_to_SLB_value_b3=ROB_s_value[b3];
-				// for(i=0;i<`MaxSLB;i++) begin
-				// 	if(SLB_s_qj[i]==b3) begin
-				// 		SLB_s_qj[i]=-1;SLB_s_vj[i]=ROB_s_value[b3];
-				// 	end
-				// 	if(SLB_s_qk[i]==b3) begin
-				// 		SLB_s_qk[i]=-1;SLB_s_vk[i]=ROB_s_value[b3];
-				// 	end
-				// end
-			end
+		    if(isload&&!ROB_s_ready[b3]) begin
+                ROB_to_SLB_needchange2=1;
+            end
+            else begin
+                if(!ROB_s_ready[b3]);
+                else begin
+                    // update ROB
+                    ROB_size_internal_subflag=1;
+    
+                    // update register
+                    ROB_to_Reg_needchange=1;
+                    commit_rd=ROB_s_dest[b3];
+                    reg_reg_commit_rd_=ROB_s_value[b3];
+                    if(reg_busy_commit_rd&&reg_reorder_commit_rd==b3) begin
+                        ROB_to_Reg_needchange2=1;
+                        reg_busy_commit_rd_=0;
+                    end
+    
+                    // update RS
+                    ROB_to_RS_needchange=1;
+                    ROB_to_RS_value_b3=ROB_s_value[b3];
+                    // for(i=0;i<`MaxRS;i++) begin
+                    // 	if(RS_s_busy[i]) begin
+                    // 		if(RS_s_qj[i]==b3) begin
+                    // 			RS_s_qj[i]=-1;RS_s_vj[i]=ROB_s_value[b3];
+                    // 		end
+                    // 		if(RS_s_qk[i]==b3) begin
+                    // 			RS_s_qk[i]=-1;RS_s_vk[i]=ROB_s_value[b3];
+                    // 		end
+                    // 	end
+                    // end
+    
+                    // update SLB
+                    ROB_to_SLB_needchange=1;
+                    ROB_to_SLB_value_b3=ROB_s_value[b3];
+                    // for(i=0;i<`MaxSLB;i++) begin
+                    // 	if(SLB_s_qj[i]==b3) begin
+                    // 		SLB_s_qj[i]=-1;SLB_s_vj[i]=ROB_s_value[b3];
+                    // 	end
+                    // 	if(SLB_s_qk[i]==b3) begin
+                    // 		SLB_s_qk[i]=-1;SLB_s_vk[i]=ROB_s_value[b3];
+                    // 	end
+                    // end
+                end
+            end
 		end
 	end
 end
@@ -381,11 +392,14 @@ always @(posedge clk) begin
 				end
 			end
 			else begin//Load or calc
-				if(!ROB_s_ready[b3]);
-				else begin
-					// update ROB
-					ROB_L<=(ROB_L+1)%`MaxROB;
-				end
+			    if(isload&&!ROB_s_ready[b3]);
+                else begin
+                    if(!ROB_s_ready[b3]);
+                    else begin
+                        // update ROB
+                        ROB_L<=(ROB_L+1)%`MaxROB;
+                    end
+                end
 			end
 		end
 

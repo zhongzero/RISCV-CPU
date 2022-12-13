@@ -68,9 +68,9 @@ module RS (
 // end
 
 reg [`INST_TYPE_WIDTH] RS_s_ordertype[`MaxRS-1:0];
-//reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0]; //for_debug
+//reg [`DATA_WIDTH] RS_s_inst[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_pc[`MaxRS-1:0];
-reg [`DATA_WIDTH] RS_s_jumppc[`MaxRS-1:0];
+//reg [`DATA_WIDTH] RS_s_jumppc[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_vj[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_vk[`MaxRS-1:0];
 reg [`DATA_WIDTH] RS_s_qj[`MaxRS-1:0];
@@ -162,7 +162,7 @@ always @(posedge clk) begin
 			RS_s_ordertype[i]<=0;
 //			RS_s_inst[i]<=0;
 			RS_s_pc[i]<=0;
-			RS_s_jumppc[i]<=0;
+//			RS_s_jumppc[i]<=0;
 			RS_s_vj[i]<=0;
 			RS_s_vk[i]<=0;
 			RS_s_qj[i]<=-1;
@@ -207,7 +207,7 @@ always @(posedge clk) begin
 //			RS_s_inst[r2]<=RS_s_inst_r2_;
 			RS_s_ordertype[r2]<=RS_s_ordertype_r2_;
 			RS_s_pc[r2]<=RS_s_pc_r2_;
-			RS_s_jumppc[r2]<=RS_s_jumppc_r2_;
+//			RS_s_jumppc[r2]<=RS_s_jumppc_r2_;
 			RS_s_A[r2]<=RS_s_A_r2_;
 			RS_s_reorder[r2]<=RS_s_reorder_r2_;
 			RS_s_busy[r2]<=RS_s_busy_r2_;

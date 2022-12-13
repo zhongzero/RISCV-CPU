@@ -38,7 +38,7 @@ integer i;
 always @(*) begin
 	if(BHT_s[bht_id1][0]==0)bht_get=0;
 	else bht_get=1;
-//	 bht_get=0;//让预测始终失�?
+//	bht_get=0;//让预测始终失�?
 end
 
 reg flagok,g1,g2;

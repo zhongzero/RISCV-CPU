@@ -85,7 +85,7 @@ module SLB (
 
 reg [`INST_TYPE_WIDTH] SLB_s_ordertype[`MaxSLB-1:0];
 //reg [`DATA_WIDTH] SLB_s_inst[`MaxSLB-1:0];//for_debug
-reg [`DATA_WIDTH] SLB_s_pc[`MaxSLB-1:0];
+//reg [`DATA_WIDTH] SLB_s_pc[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_vj[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_vk[`MaxSLB-1:0];
 reg [`DATA_WIDTH] SLB_s_qj[`MaxSLB-1:0];
@@ -181,7 +181,7 @@ always @(*) begin
 	if(!SLB_is_waiting_data&&SLB_size) begin
 		r3=SLB_L;
 		if(isload) begin
-			if(SLB_s_qj[r3]==-1) begin
+			if(SLB_s_qj[r3]==-1&&SLB_s_ready[r3]) begin
 				SLB_to_memctrl_needchange=1;//load
 				SLB_to_memctrl_ordertype=SLB_s_ordertype[r3];
 				SLB_to_memctrl_vj=SLB_s_vj[r3];
@@ -214,7 +214,7 @@ always @(posedge clk) begin
 		for(i=0;i<`MaxSLB;i=i+1) begin
 			SLB_s_ordertype[i]<=0;
 //			SLB_s_inst[i]<=0;
-			SLB_s_pc[i]<=0;
+//			SLB_s_pc[i]<=0;
 			SLB_s_vj[i]<=0;
 			SLB_s_vk[i]<=0;
 			SLB_s_qj[i]<=-1;
@@ -231,7 +231,7 @@ always @(posedge clk) begin
 	else if(Clear_flag) begin
 		SLB_L<=1;SLB_R<=0;SLB_size<=0;SLB_is_waiting_data<=0;
 		for(i=0;i<`MaxSLB;i=i+1) begin
-			SLB_s_qj[i]<=-1;SLB_s_qk[i]<=-1;
+			SLB_s_qj[i]<=-1;SLB_s_qk[i]<=-1;SLB_s_reorder[i]<=0;SLB_s_ready[i]<=0;
 		end
 	end
 	else begin
@@ -264,7 +264,7 @@ always @(posedge clk) begin
 
 		if(!SLB_is_waiting_data&&SLB_size) begin
 			if(isload) begin
-				if(SLB_s_qj[r3]==-1) begin
+				if(SLB_s_qj[r3]==-1&&SLB_s_ready[r3]) begin
 					SLB_is_waiting_data<=1;
 				end
 			end
@@ -284,7 +284,7 @@ always @(posedge clk) begin
 			SLB_s_qk[r1]<=SLB_s_qk_r1_;
 //			SLB_s_inst[r1]<=SLB_s_inst_r1_;
 			SLB_s_ordertype[r1]<=SLB_s_ordertype_r1_;
-			SLB_s_pc[r1]<=SLB_s_pc_r1_;
+//			SLB_s_pc[r1]<=SLB_s_pc_r1_;
 			SLB_s_A[r1]<=SLB_s_A_r1_;
 			SLB_s_reorder[r1]<=SLB_s_reorder_r1_;
 			SLB_s_ready[r1]<=SLB_s_ready_r1_;

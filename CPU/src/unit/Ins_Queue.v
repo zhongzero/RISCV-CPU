@@ -1,6 +1,6 @@
 //`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
-`include "E://RISCV-CPU/CPU/src/info.v"
+ `include "E://RISCV-CPU/CPU/src/info.v"
 
 // `include "/RISCV-CPU/CPU/src/func/Decode.v"
 // `include "/RISCV-CPU/CPU/src/func/IsBranch.v"
@@ -128,7 +128,7 @@ module InstQueue (
 
 	/* do_ROB() */
 	//ROB
-	input wire [`DATA_WIDTH] pc_ // Clear_flag=1鏃跺仛 (杩欎釜鏇存敼pc鐨勪紭鍏堢骇楂樹簬Get_ins_to_queue()鐨勪紭鍏堢骇 !!!)
+	input wire [`DATA_WIDTH] pc_ // Clear_flag=1时做 (这个更改pc的优先级高于Get_ins_to_queue()的优先级 !!!)
 );
 
 
@@ -230,19 +230,18 @@ always @(*) begin
 	insqueue_to_memctrl_needchange=0;
 	insqueue_to_ICache_needchange=0;
 	
-	addr1=0;//for_latch
+	
 	addr2=0;//for_latch
 	memctrl_ins_addr_=0;//for_latch
 	memctrl_ins_remain_cycle_=0;//for_latch
 	storeInst=0;//for_latch
 	bht_id1=0;//for_latch
     g=0;//for_latch
-    inst=0;//for_latch
 
 	if(!Ins_queue_is_waiting_ins&&Ins_queue_size!=`MaxIns) begin
 		addr1=pc;
 		hit=hit_in;
-		inst=returnInst;
+		// inst=returnInst; //do later(for_latch)
 		// Search_In_ICache(pc;hit_in;inst);
 		if(!hit) begin
 			insqueue_to_memctrl_needchange=1;
@@ -250,6 +249,8 @@ always @(*) begin
 			memctrl_ins_remain_cycle_=4;
 		end
 	end
+	else addr1=0;//for_latch
+
 	if(memctrl_ins_ok) begin
 		inst=memctrl_ins_ans;
 
@@ -258,6 +259,9 @@ always @(*) begin
 		storeInst=memctrl_ins_ans;
 		// Store_In_ICache(pc;memctrl_ins_ans);
 	end
+	else if(hit)inst=returnInst;
+	else inst=0;//for_latch
+
 	if(memctrl_ins_ok||hit) begin
 		// Order order=Decode(inst);
 		// if(order_type_0==`EEND) begin
@@ -269,8 +273,8 @@ always @(*) begin
 
 			// isBranch(order_type_0,isbranch);
 			if(isbranch) begin
-				//JAL 鐩存帴璺宠浆
-				//鐩墠寮哄埗pc涓嶈烦杞紱JALR榛樿涓嶈烦杞紝璁╁畠蹇呭畾棰勬祴澶辫触
+				//JAL 直接跳转
+				//目前强制pc不跳转；JALR默认不跳转，让它必定预测失败
 				if(order_type_0==`JAL);
 				else  begin
 					if(order_type_0==`JALR);
@@ -340,44 +344,44 @@ always @(*) begin
 	
 	
 
-	//InstructionQueue涓虹┖锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+	//InstructionQueue为空，因此取消issue InstructionQueue中的指令
 	if(Ins_queue_size==0);
-	//ROB婊′簡锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+	//ROB满了，因此取消issue InstructionQueue中的指令
 	else if(ROB_size==`MaxROB);
 	else begin
 		// isLoad(Ins_queue_s_ordertype,isload[Ins_queue_L]);
 		// isStore(Ins_queue_s_ordertype,isstore[Ins_queue_L]);
-		if(isload||isstore) begin //load鎸囦护(LB;LH;LW;LBU;LHU) or store鎸囦护(SB;SH;SW)
+		if(isload||isstore) begin //load指令(LB;LH;LW;LBU;LHU) or store指令(SB;SH;SW)
 			
-			//SLB婊′簡锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+			//SLB满了，因此取消issue InstructionQueue中的指令
 			if(SLB_size==`MaxSLB);
 			else begin
 				insqueue_to_SLB_needchange=1;
 				insqueue_to_ROB_needchange=1;
-				//r涓鸿鎸囦护SLB鍑嗗瀛樻斁鐨勪綅缃?
+				//r为该指令SLB准备存放的位??
 				r1=(SLB_R+1)%`MaxSLB;
 				SLB_R_=r1;insqueue_to_SLB_size_addflag=1;
 				
-				//b涓鸿鎸囦护ROB鍑嗗瀛樻斁鐨勪綅缃?
+				//b为该指令ROB准备存放的位??
 				b1=(ROB_R+1)%`MaxROB;
 				ROB_R_=b1;insqueue_to_ROB_size_addflag=1;
 
-				//灏嗚鎸囦护浠嶪ns_queue鍒犲幓
+				//将该指令从Ins_queue删去
 				insqueue_size_internal_subflag=1;
 				// Ins_queue_size--;
-				//瑙ｇ爜
+				//解码
 				// Order order=Decode(Ins_queue_s_inst[Ins_queue_L]);
 				
-				//淇敼ROB
+				//修改ROB
 				ROB_s_pc_b1_=Ins_queue_s_pc[Ins_queue_L];
 				ROB_s_inst_b1_=Ins_queue_s_inst[Ins_queue_L]; ROB_s_ordertype_b1_=Ins_queue_s_ordertype[Ins_queue_L];
 				ROB_s_dest_b1_=order_rd ; ROB_s_ready_b1_=0;
 				
-				//淇敼SLB
+				//修改SLB
 
 
-				//鏍规嵁rs1瀵勫瓨鍣ㄧ殑鎯呭喌鍐冲畾鏄惁缁欏叾renaming(vj;qj)
-				//濡傛灉rs1瀵勫瓨鍣ㄤ笂涓篵usy涓斿叾鏈?鍚庝竴娆′慨鏀瑰搴旂殑ROB浣嶇疆杩樻湭commit锛屽垯renaming
+				//根据rs1寄存器的情况决定是否给其renaming(vj;qj)
+				//如果rs1寄存器上为busy且其??后一次修改对应的ROB位置还未commit，则renaming
 				if(reg_busy_order_rs1) begin
 					h1=reg_reorder_order_rs1;
 					if(ROB_s_ready_h1) begin
@@ -389,9 +393,9 @@ always @(*) begin
 					SLB_s_vj_r1_=reg_reg_order_rs1;SLB_s_qj_r1_=-1;
 				end
 
-				if(isstore) begin// store绫诲瀷  锛堟湁rs2鐨勶級
-					//鏍规嵁rs2瀵勫瓨鍣ㄧ殑鎯呭喌鍐冲畾鏄惁缁欏叾renaming(vk;qk)
-					//濡傛灉rs2瀵勫瓨鍣ㄤ笂涓篵usy涓斿叾鏈?鍚庝竴娆′慨鏀瑰搴旂殑ROB浣嶇疆杩樻湭commit锛屽垯renaming
+				if(isstore) begin// store类型  （有rs2的）
+					//根据rs2寄存器的情况决定是否给其renaming(vk;qk)
+					//如果rs2寄存器上为busy且其??后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs2) begin
 						h2=reg_reorder_order_rs2;
 						if(ROB_s_ready_h2) begin
@@ -411,46 +415,46 @@ always @(*) begin
 				
 				if(isstore)SLB_s_ready_r1_=0;
 
-				//淇敼register
-				if(!isstore) begin//涓嶄负 store鎸囦护  (鍏朵粬閮芥湁rd)
+				//修改register
+				if(!isstore) begin//不为 store指令  (其他都有rd)
 					insqueue_to_Reg_needchange=1;
 					reg_reorder_order_rd_=b1;reg_busy_order_rd_=1;
 				end
 			end
 		end
-		else begin// 璁＄畻(LUI;AUIPC;ADD;SUB___) or 鏃犳潯浠惰烦杞?(BEQ;BNE;BLE___) or 鏈夋潯浠惰烦杞?(JAL;JALR)
+		else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳??(BEQ;BNE;BLE___) or 有条件跳??(JAL;JALR)
 			
-			//鎵惧埌涓?涓┖鐨凴S鐨勪綅缃紝r涓烘壘鍒扮殑绌虹殑RS鐨勪綅缃?
-			r2=RS_unbusy_pos; //鎵句笉鍒拌繑鍥?-1
+			//找到??个空的RS的位置，r为找到的空的RS的位??
+			r2=RS_unbusy_pos; //找不到返??-1
 			// r2=-1;
 			// for(i=0;i<`MaxRS;i++) begin
 			// 	if(!RS_s_busy[i]) begin
 			// 		r2=i;break;
 			// 	end
 			// end
-			//RS婊′簡锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+			//RS满了，因此取消issue InstructionQueue中的指令
 			if(r2==-1);
 			else begin
-				//b涓鸿鎸囦护ROB鍑嗗瀛樻斁鐨勪綅缃?
+				//b为该指令ROB准备存放的位??
 				b1=(ROB_R+1)%`MaxROB;
-				//灏嗚鎸囦护浠嶪ns_queue鍒犲幓
+				//将该指令从Ins_queue删去
 				insqueue_size_internal_subflag=1;
 				// Ins_queue_size--;
-				//瑙ｇ爜
+				//解码
 				// Order order=Decode(Ins_queue_s_inst[Ins_queue_L]);
 
-				//淇敼ROB
+				//修改ROB
 				insqueue_to_ROB_needchange=1;
 				ROB_R_=b1;insqueue_to_ROB_size_addflag=1;
 				ROB_s_inst_b1_=Ins_queue_s_inst[Ins_queue_L]; ROB_s_ordertype_b1_=Ins_queue_s_ordertype[Ins_queue_L];
 				ROB_s_pc_b1_=Ins_queue_s_pc[Ins_queue_L]; ROB_s_jumppc_b1_=Ins_queue_s_jumppc[Ins_queue_L] ; ROB_s_isjump_b1_=Ins_queue_s_isjump[Ins_queue_L];
 				ROB_s_dest_b1_=order_rd ; ROB_s_ready_b1_=0;
 
-				//淇敼RS
+				//修改RS
 				insqueue_to_RS_needchange=1;
-				if( Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h37&&Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h17 && Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h6f ) begin// 涓嶄负LUI;AUIPC;JAL (鏈塺s1鐨?)
-					//鏍规嵁rs1瀵勫瓨鍣ㄧ殑鎯呭喌鍐冲畾鏄惁缁欏叾renaming(vj;qj)
-					//濡傛灉rs1瀵勫瓨鍣ㄤ笂涓篵usy涓斿叾鏈?鍚庝竴娆′慨鏀瑰搴旂殑ROB浣嶇疆杩樻湭commit锛屽垯renaming
+				if( Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h37&&Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h17 && Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h6f ) begin// 不为LUI;AUIPC;JAL (有rs1??)
+					//根据rs1寄存器的情况决定是否给其renaming(vj;qj)
+					//如果rs1寄存器上为busy且其??后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs1) begin
 						h1=reg_reorder_order_rs1;
 						if(ROB_s_ready_h1) begin
@@ -464,9 +468,9 @@ always @(*) begin
 				end
 				else RS_s_qj_r2_=-1;
 
-				if( Ins_queue_s_inst[Ins_queue_L][6:0]==7'h33 || Ins_queue_s_inst[Ins_queue_L][6:0]==7'h63) begin// (ADD__AND) or 鏈夋潯浠惰烦杞?  锛堟湁rs2鐨勶級
-					//鏍规嵁rs2瀵勫瓨鍣ㄧ殑鎯呭喌鍐冲畾鏄惁缁欏叾renaming(vk;qk)
-					//濡傛灉rs2瀵勫瓨鍣ㄤ笂涓篵usy涓斿叾鏈?鍚庝竴娆′慨鏀瑰搴旂殑ROB浣嶇疆杩樻湭commit锛屽垯renaming
+				if( Ins_queue_s_inst[Ins_queue_L][6:0]==7'h33 || Ins_queue_s_inst[Ins_queue_L][6:0]==7'h63) begin// (ADD__AND) or 有条件跳??  （有rs2的）
+					//根据rs2寄存器的情况决定是否给其renaming(vk;qk)
+					//如果rs2寄存器上为busy且其??后一次修改对应的ROB位置还未commit，则renaming
 					if(reg_busy_order_rs2) begin
 						h2=reg_reorder_order_rs2;
 						if(ROB_s_ready_h2) begin
@@ -486,8 +490,8 @@ always @(*) begin
 				RS_s_A_r2_=order_imm ; RS_s_reorder_r2_=b1;
 				RS_s_busy_r2_=1;
 
-				//淇敼register
-				if(Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h63) begin//涓嶄负 鏈夋潯浠惰烦杞?  (鍏朵粬閮芥湁rd)
+				//修改register
+				if(Ins_queue_s_inst[Ins_queue_L][6:0]!=7'h63) begin//不为 有条件跳??  (其他都有rd)
 					insqueue_to_Reg_needchange=1;
 					reg_reorder_order_rd_=b1;reg_busy_order_rd_=1;
 				end
@@ -541,8 +545,8 @@ always @(posedge clk) begin
 
 			Ins_queue_s_inst[g]<=inst;Ins_queue_s_ordertype[g]<=order_type_0;Ins_queue_s_pc[g]<=pc;
 			if(isbranch) begin
-				//JAL 鐩存帴璺宠浆
-				//鐩墠寮哄埗pc涓嶈烦杞紱JALR榛樿涓嶈烦杞紝璁╁畠蹇呭畾棰勬祴澶辫触
+				//JAL 直接跳转
+				//目前强制pc不跳转；JALR默认不跳转，让它必定预测失败
 				if(order_type_0==`JAL) begin
 					pc<=pc+order_imm_0;
 				end
@@ -570,23 +574,23 @@ always @(posedge clk) begin
 
 		// do_ins_queue() part2
 		
-		//InstructionQueue涓虹┖锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+		//InstructionQueue为空，因此取消issue InstructionQueue中的指令
 		if(Ins_queue_size==0);
-		//ROB婊′簡锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+		//ROB满了，因此取消issue InstructionQueue中的指令
 		else if(ROB_size==`MaxROB);
 		else begin
-			if(isload||isstore) begin //load鎸囦护(LB;LH;LW;LBU;LHU) or store鎸囦护(SB;SH;SW)
-				//SLB婊′簡锛屽洜姝ゅ彇娑坕ssue InstructionQueue涓殑鎸囦护
+			if(isload||isstore) begin //load指令(LB;LH;LW;LBU;LHU) or store指令(SB;SH;SW)
+				//SLB满了，因此取消issue InstructionQueue中的指令
 				if(SLB_size==`MaxSLB);
 				else begin
-					//灏嗚鎸囦护浠嶪ns_queue鍒犲幓
+					//将该指令从Ins_queue删去
 					Ins_queue_L<=(Ins_queue_L+1)%`MaxIns;
 				end
 			end
-			else begin// 璁＄畻(LUI;AUIPC;ADD;SUB___) or 鏃犳潯浠惰烦杞?(BEQ;BNE;BLE___) or 鏈夋潯浠惰烦杞?(JAL;JALR)
+			else begin// 计算(LUI;AUIPC;ADD;SUB___) or 无条件跳??(BEQ;BNE;BLE___) or 有条件跳??(JAL;JALR)
 				if(r2==-1);
 				else begin
-					//灏嗚鎸囦护浠嶪ns_queue鍒犲幓
+					//将该指令从Ins_queue删去
 					Ins_queue_L<=(Ins_queue_L+1)%`MaxIns;
 				end
 			end
