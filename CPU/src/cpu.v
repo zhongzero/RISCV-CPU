@@ -351,6 +351,7 @@ MemCtrl u_MemCtrl(
     .clk                            ( clk_in                            ),
     .rst                            ( rst_in                            ),
     .rdy                            ( rdy_in                            ),
+    .io_buffer_full                 ( io_buffer_full                    ),
     .r_or_w                         ( mem_wr                        ),
     .a_in                           ( mem_a                           ),
     .d_in                           ( mem_dout                           ),

@@ -1,4 +1,4 @@
-//`include "/mnt/e/RISCV-CPU/CPU/src/info.v"
+// `include "/mnt/e/RISCV-CPU/CPU/src/info.v"
 // `include "/RISCV-CPU/CPU/src/info.v"
 `include "E://RISCV-CPU/CPU/src/info.v"
 
@@ -6,6 +6,8 @@ module MemCtrl (
 	input wire clk,
 	input wire rst,
 	input wire rdy,
+
+	input wire io_buffer_full,
 
 	/* ram */
 	output reg r_or_w,//0:r,1:w
@@ -41,6 +43,7 @@ module MemCtrl (
 	input wire [`DATA_WIDTH] SLB_to_memctrl_A
 );
 
+reg io_buffer_full_pre;
 
 // always @(*) begin
 // 	$display("MemCtrl    ","clk=",clk,",rst=",rst,", time=%t",$realtime);
@@ -101,25 +104,31 @@ always @(*) begin
 				data_ans=d_out;
 			end
 		end
-		else  begin//store
-			if(memctrl_data_current_pos==0) begin
-				data_in=memctrl_data_in[7:0];//[7:0]
-			end
-			if(memctrl_data_current_pos==1) begin
-				data_in=memctrl_data_in[15:8];//[15:8]
-			end
-			if(memctrl_data_current_pos==2) begin
-				data_in=memctrl_data_in[23:16];//[23:16]
-			end
-			if(memctrl_data_current_pos==3) begin
-				data_in=memctrl_data_in[31:24];//[31:24]
-			end
-			
-			if(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4) begin
-				r_or_w=1;
-				a_in=memctrl_data_addr[31:0];
-				d_in=data_in;
-				// mem_ram(need;1;memctrl_data_addr;data_in;data_ans);
+		else begin//store
+			if( !( (io_buffer_full_pre||io_buffer_full) && (memctrl_data_addr==32'h30000||memctrl_data_addr==32'h30004) ) ) begin
+				if(memctrl_data_current_pos==0) begin
+					data_in=memctrl_data_in[7:0];//[7:0]
+				end
+				if(memctrl_data_current_pos==1) begin
+					data_in=memctrl_data_in[15:8];//[15:8]
+				end
+				if(memctrl_data_current_pos==2) begin
+					data_in=memctrl_data_in[23:16];//[23:16]
+				end
+				if(memctrl_data_current_pos==3) begin
+					data_in=memctrl_data_in[31:24];//[31:24]
+				end
+				
+				if(1<=memctrl_data_remain_cycle&&memctrl_data_remain_cycle<=4) begin
+					r_or_w=1;
+					a_in=memctrl_data_addr[31:0];
+					d_in=data_in;
+					// mem_ram(need;1;memctrl_data_addr;data_in;data_ans);
+				end
+				else begin
+					r_or_w=0;
+					a_in=0;
+				end
 			end
 			else begin
 				r_or_w=0;
@@ -164,6 +173,7 @@ end
 
 
 always @(posedge clk) begin
+	io_buffer_full_pre<=io_buffer_full;
 	if(rst) begin
 		//memctrl
 		memctrl_ins_addr<=0;
@@ -240,25 +250,27 @@ always @(posedge clk) begin
 
 			end
 			else  begin//store
-				if(memctrl_data_remain_cycle==4) begin
-					memctrl_data_remain_cycle<=3;
-					memctrl_data_current_pos<=memctrl_data_current_pos+1;
-					memctrl_data_addr<=memctrl_data_addr+1;
-				end
-				if(memctrl_data_remain_cycle==3) begin
-					memctrl_data_remain_cycle<=2;
-					memctrl_data_current_pos<=memctrl_data_current_pos+1;
-					memctrl_data_addr<=memctrl_data_addr+1;
-				end
-				if(memctrl_data_remain_cycle==2) begin
-					memctrl_data_remain_cycle<=1;
-					memctrl_data_current_pos<=memctrl_data_current_pos+1;
-					memctrl_data_addr<=memctrl_data_addr+1;
-				end
-				if(memctrl_data_remain_cycle==1) begin
-					memctrl_data_remain_cycle<=0;
-					memctrl_data_current_pos<=0;
-					memctrl_data_ok<=1;
+				if( !( (io_buffer_full_pre||io_buffer_full) && (memctrl_data_addr==32'h30000||memctrl_data_addr==32'h30004) ) ) begin
+					if(memctrl_data_remain_cycle==4) begin
+						memctrl_data_remain_cycle<=3;
+						memctrl_data_current_pos<=memctrl_data_current_pos+1;
+						memctrl_data_addr<=memctrl_data_addr+1;
+					end
+					if(memctrl_data_remain_cycle==3) begin
+						memctrl_data_remain_cycle<=2;
+						memctrl_data_current_pos<=memctrl_data_current_pos+1;
+						memctrl_data_addr<=memctrl_data_addr+1;
+					end
+					if(memctrl_data_remain_cycle==2) begin
+						memctrl_data_remain_cycle<=1;
+						memctrl_data_current_pos<=memctrl_data_current_pos+1;
+						memctrl_data_addr<=memctrl_data_addr+1;
+					end
+					if(memctrl_data_remain_cycle==1) begin
+						memctrl_data_remain_cycle<=0;
+						memctrl_data_current_pos<=0;
+						memctrl_data_ok<=1;
+					end
 				end
 			end
 		end
