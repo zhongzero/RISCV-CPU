@@ -18,3 +18,19 @@ acm班大二上大作业
 
 `Icache size:128` 
 
+
+
+
+
+**for simulation** 
+
+需要把 src/unit/SLB.v中 
+
+```
+// do_SLB() part1
+always @(*) begin
+	r3=0;//for_latch
+end
+```
+
+r3=0这行删去，否则会导致simulation死循环(why?：no idea)
